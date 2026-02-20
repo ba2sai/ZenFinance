@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="120" fill="#312e81"/>
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="300" fill="white">Z</text>
+  <path d="M420 380C420 380 460 340 460 280C460 220 400 200 400 200C400 200 380 260 380 320C380 380 420 380 420 380Z" fill="#a3e635"/>
+  <path d="M380 320L420 380" stroke="#3f3f46" stroke-width="20" stroke-linecap="round"/>
+</svg>
