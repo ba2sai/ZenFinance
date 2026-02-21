@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useFinanceStore } from '../store/useFinanceStore';
-import { User, Mail, Edit2, LogOut, Check, X, Shield, Globe, Monitor, Calendar, Award, Flame } from 'lucide-react';
+import { User, Mail, Edit2, LogOut, Check, X, Shield, Globe, Monitor, Calendar, Award, Flame, FolderPlus, Plus, Loader2, TrendingUp, CreditCard, Trash2 } from 'lucide-react';
 import { updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebase';
 import { GoogleCalendarService } from '../services/GoogleCalendarService';
@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 export const ProfileView: React.FC = () => {
   const { user, logout, googleAccessToken, orgId } = useAuthStore();
-  const { clearFinanceData, incomes, recurringExpenses, savingsGoals, addSavingGoal, removeSavingGoal, language, currency, setLanguage, setCurrency, expenses } = useFinanceStore();
+  const { clearFinanceData, incomes, recurringExpenses, savingsGoals, addSavingGoal, removeSavingGoal, language, currency, setLanguage, setCurrency, expenses, customCategories, addCustomCategory, removeCustomCategory } = useFinanceStore();
   const { currentBelt, badges, streak } = useGamification();
   
   const isGoogleUser = user?.providerData.some(p => p.providerId === 'google.com');
@@ -20,7 +20,38 @@ export const ProfileView: React.FC = () => {
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState('');
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Categories Manager
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatType, setNewCatType] = useState<'income' | 'expense'>('expense');
+  const [catLoading, setCatLoading] = useState(false);
+
+  const handleAddCategory = async () => {
+     if (!newCatName.trim() || !orgId) return;
+     setCatLoading(true);
+     try {
+       await addCustomCategory({
+         name: newCatName.trim(),
+         type: newCatType,
+         organizationId: orgId
+       });
+       setNewCatName('');
+     } catch (err) {
+       console.error(err);
+     } finally {
+       setCatLoading(false);
+     }
+  };
+
+  const handleRemoveCategory = async (id: string) => {
+     if (!window.confirm("¿Seguro que deseas eliminar esta categoría?")) return;
+     try {
+       await removeCustomCategory(id);
+     } catch (err) {
+       console.error(err);
+     }
+  };
 
   const handleUpdateProfile = async () => {
     if (!auth.currentUser) return;
@@ -376,7 +407,67 @@ export const ProfileView: React.FC = () => {
                  <button className="w-full py-2 text-sm text-slate-500 hover:text-rose-400 transition-colors">
                     Borrar todos mis datos
                  </button>
+               </div>
+            </div>
+         </div>
+
+        {/* Categories Card */}
+        <div className="glass-card p-8 rounded-3xl space-y-6">
+           <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <FolderPlus size={20} className="text-pink-400" />
+              Categorías Personalizadas
+           </h3>
+
+           <div className="space-y-4">
+              <p className="text-sm text-slate-400">Agrega tus propias categorías para clasificar tus ingresos y gastos.</p>
+              
+              <div className="flex gap-2">
+                 <select 
+                   value={newCatType}
+                   onChange={e => setNewCatType(e.target.value as 'income' | 'expense')}
+                   className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 outline-none p-2"
+                 >
+                    <option value="expense">Gasto</option>
+                    <option value="income">Ingreso</option>
+                 </select>
+                 
+                 <input
+                   type="text"
+                   placeholder="Nombre..."
+                   value={newCatName}
+                   onChange={e => setNewCatName(e.target.value)}
+                   className="flex-1 bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 outline-none p-2 px-3"
+                 />
+                 
+                 <button
+                   onClick={handleAddCategory}
+                   disabled={catLoading || !newCatName.trim()}
+                   className="px-4 bg-pink-600 hover:bg-pink-500 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                 >
+                   {catLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                 </button>
               </div>
+
+              {customCategories.length > 0 && (
+                 <div className="mt-4 space-y-2">
+                    {customCategories.map(cat => (
+                       <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                          <div className="flex items-center gap-3">
+                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                                {cat.type === 'income' ? <TrendingUp size={14} /> : <CreditCard size={14} />}
+                             </div>
+                             <span className="text-slate-300 font-medium">{cat.name}</span>
+                          </div>
+                          <button 
+                             onClick={() => handleRemoveCategory(cat.id)}
+                             className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          >
+                             <Trash2 size={16} />
+                          </button>
+                       </div>
+                    ))}
+                 </div>
+              )}
            </div>
         </div>
 

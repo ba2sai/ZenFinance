@@ -58,11 +58,19 @@ export interface SavingGoal {
   organizationId: string;
 }
 
+export interface CustomCategory {
+  id: string;
+  name: string;
+  type: 'income' | 'expense';
+  organizationId: string;
+}
+
 interface FinanceState {
   incomes: Income[];
   expenses: Expense[];
   recurringExpenses: RecurringExpense[];
   savingsGoals: SavingGoal[];
+  customCategories: CustomCategory[];
   metrics: {
     totalPatrimonio: number;
     freeBudget: number;
@@ -86,10 +94,14 @@ interface FinanceState {
   removeSavingGoal: (id: string) => Promise<void>;
   updateSavingGoal: (id: string, data: Partial<SavingGoal>) => Promise<void>;
 
+  addCustomCategory: (category: Omit<CustomCategory, 'id'>) => Promise<void>;
+  removeCustomCategory: (id: string) => Promise<void>;
+
   setIncomes: (incomes: Income[]) => void;
   setExpenses: (expenses: Expense[]) => void;
   setRecurringExpenses: (expenses: RecurringExpense[]) => void;
   setSavingsGoals: (savingsGoals: SavingGoal[]) => void;
+  setCustomCategories: (categories: CustomCategory[]) => void;
   subscribeToFinancials: (orgId: string, options?: { loadAllHistory?: boolean }) => Unsubscribe[];
   clearFinanceData: () => void;
   clearPermissionError: () => void;
@@ -100,6 +112,7 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   recurringExpenses: [],
   incomes: [],
   savingsGoals: [],
+  customCategories: [],
   metrics: {
     totalPatrimonio: 0,
     freeBudget: 0,
@@ -124,7 +137,8 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   setRecurringExpenses: (recurringExpenses) => set({ recurringExpenses }),
   setIncomes: (incomes) => set({ incomes }),
   setSavingsGoals: (savingsGoals) => set({ savingsGoals }),
-  clearFinanceData: () => set({ expenses: [], recurringExpenses: [], incomes: [], savingsGoals: [], isHistoryLoaded: false }),
+  setCustomCategories: (customCategories) => set({ customCategories }),
+  clearFinanceData: () => set({ expenses: [], recurringExpenses: [], incomes: [], savingsGoals: [], customCategories: [], isHistoryLoaded: false }),
   clearPermissionError: () => set({ permissionError: false }),
 
   addIncome: async (income) => {
@@ -199,6 +213,23 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       }
   },
 
+  addCustomCategory: async (category) => {
+      try {
+          await addDoc(collection(db, 'categories'), category);
+      } catch (error) {
+          console.error("Error adding category:", error);
+          throw error;
+      }
+  },
+
+  removeCustomCategory: async (id) => {
+      try {
+          await deleteDoc(doc(db, 'categories', id));
+      } catch (error) {
+          console.error("Error removing category:", error);
+          throw error;
+      }
+  },
 
   subscribeToFinancials: (orgId: string, options = { loadAllHistory: false }) => {
     if (!orgId || orgId === 'default-org') {
@@ -213,7 +244,8 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       { name: 'expenses', canPaginate: true },
       { name: 'incomes', canPaginate: true },
       { name: 'recurring_expenses', canPaginate: false },
-      { name: 'saving_goals', canPaginate: false }
+      { name: 'saving_goals', canPaginate: false },
+      { name: 'categories', canPaginate: false }
     ];
     const unsubs: Unsubscribe[] = [];
 
@@ -223,6 +255,7 @@ export const useFinanceStore = create<FinanceState>((set) => ({
         if (col === 'incomes') set({ incomes: data as Income[] });
         if (col === 'recurring_expenses') set({ recurringExpenses: data as RecurringExpense[] });
         if (col === 'saving_goals') set({ savingsGoals: data as SavingGoal[] });
+        if (col === 'categories') set({ customCategories: data as CustomCategory[] });
     };
 
     collectionsConfig.forEach(col => {

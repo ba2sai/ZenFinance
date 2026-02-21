@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, Calendar, ChevronLeft, ChevronRight, Plus, Target } from 'lucide-react';
+import { TrendingUp, Calendar, ChevronLeft, ChevronRight, Target } from 'lucide-react';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { ZenAdvisor } from './ZenAdvisor';
 
@@ -108,11 +108,6 @@ export const Dashboard: React.FC = () => {
                   <ChevronRight size={20} />
                </button>
             </div>
-            
-            <button className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all flex items-center gap-2">
-               <Plus size={20} />
-               <span className="hidden sm:inline">Nuevo Registro</span>
-            </button>
          </div>
       </div>
 

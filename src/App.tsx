@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useAuthStore } from './store/useAuthStore';
 import { useFinanceStore } from './store/useFinanceStore';
 import { ImportModal } from './components/ImportModal';
+import { WalkthroughModal } from './components/WalkthroughModal';
 import { Sidebar } from './components/Sidebar';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { Login } from './components/Login';
@@ -49,6 +50,8 @@ function App() {
         {isImportOpen && <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />}
       </AnimatePresence>
 
+      <WalkthroughModal />
+
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
       <main className="flex-1 p-4 md:p-8 ml-0 md:ml-20 lg:ml-64 transition-all duration-300 overflow-y-auto max-h-screen custom-scrollbar">
@@ -70,13 +73,15 @@ function App() {
            </div>
            
            <div className="flex gap-3">
-             <button 
-                onClick={() => setIsImportOpen(true)}
-                className="px-5 py-2.5 bg-slate-800/50 backdrop-blur-md text-indigo-400 font-bold rounded-xl shadow-sm border border-white/10 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
-             >
-                <Upload size={18} />
-                <span>Importar CSV</span>
-             </button>
+             {(activeView === 'incomes' || activeView === 'expenses') && (
+               <button 
+                  onClick={() => setIsImportOpen(true)}
+                  className="px-5 py-2.5 bg-slate-800/50 backdrop-blur-md text-indigo-400 font-bold rounded-xl shadow-sm border border-white/10 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
+               >
+                  <Upload size={18} />
+                  <span>Importar CSV</span>
+               </button>
+             )}
            </div>
         </header>
 

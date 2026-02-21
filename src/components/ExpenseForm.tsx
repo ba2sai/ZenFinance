@@ -28,6 +28,16 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
   
   const { orgId } = useAuthStore();
   const addExpense = useFinanceStore(state => state.addExpense);
+  const customExpenseCategories = useFinanceStore(state => state.customCategories || []).filter(c => c.type === 'expense');
+  
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+     setTimeout(() => {
+         inputRef.current?.focus();
+         inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+     }, 50);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +82,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Descripción</label>
               <input
+                ref={inputRef}
                 type="text"
                 required
                 value={description}
@@ -103,14 +114,12 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white [&>option]:bg-slate-900"
               >
-                <option value="Food">Alimentación</option>
-                <option value="Transport">Transporte</option>
-                <option value="Housing">Vivienda</option>
-                <option value="Entertainment">Entretenimiento</option>
-                <option value="Health">Salud</option>
-                <option value="Education">Educación</option>
-                <option value="Software">Software/Apps</option>
-                <option value="Other">Otro</option>
+                {Object.entries(EXPENSE_CATEGORIES).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+                {customExpenseCategories.map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
               </select>
             </div>
 

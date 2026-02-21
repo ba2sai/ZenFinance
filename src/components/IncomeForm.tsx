@@ -22,6 +22,18 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
   
   const { orgId } = useAuthStore();
   const addIncome = useFinanceStore(state => state.addIncome);
+  const customIncomeCategories = useFinanceStore(state => state.customCategories || []).filter(c => c.type === 'income');
+  
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+       setTimeout(() => {
+           inputRef.current?.focus();
+           inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+       }, 50);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (existingIncome) {
@@ -93,6 +105,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Fuente</label>
               <input
+                ref={inputRef}
                 type="text"
                 required
                 value={source}
@@ -113,6 +126,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
                 <option value="Inversión">Inversión</option>
                 <option value="Negocio">Negocio</option>
                 <option value="Regalo">Regalo</option>
+                {customIncomeCategories.map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
                 <option value="Otro">Otro</option>
               </select>
             </div>
