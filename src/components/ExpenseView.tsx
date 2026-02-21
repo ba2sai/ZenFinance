@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { ExpenseForm } from './ExpenseForm';
-import { CreditCard, Plus, X, Trash2, Calendar, Repeat, ShoppingCart, Car, Home, Film, HeartPulse, GraduationCap, Smartphone, HelpCircle } from 'lucide-react';
+import { CreditCard, Plus, X, Trash2, Calendar, Repeat, ShoppingCart, Car, Home, Film, HeartPulse, GraduationCap, Smartphone, HelpCircle, TrendingDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Category Helper
@@ -19,11 +19,25 @@ const CATEGORY_CONFIG: Record<string, { label: string, color: string, icon: Reac
 
 export const ExpenseView: React.FC = () => {
   const expenses = useFinanceStore(state => state.expenses) || [];
+  const customCategories = useFinanceStore(state => state.customCategories) || [];
   const removeExpense = useFinanceStore(state => state.removeExpense);
   const isHistoryLoaded = useFinanceStore(state => state.isHistoryLoaded);
   const subscribeToFinancials = useFinanceStore(state => state.subscribeToFinancials);
   const { orgId } = useAuthStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Dynamically merge custom categories so they have a distinct color in the chart
+  const dynamicCategoryConfig = { ...CATEGORY_CONFIG };
+  customCategories.filter(c => c.type === 'expense').forEach((cat, index) => {
+     if (!dynamicCategoryConfig[cat.name]) {
+         const colors = ['bg-pink-500', 'bg-lime-500', 'bg-amber-500', 'bg-cyan-600', 'bg-fuchsia-500'];
+         dynamicCategoryConfig[cat.name] = { 
+             label: cat.name, 
+             color: colors[index % colors.length], 
+             icon: CreditCard 
+         };
+     }
+  });
 
   // Chart Logic
   const categoryTotals = expenses.reduce((acc, curr) => {
@@ -38,28 +52,63 @@ export const ExpenseView: React.FC = () => {
       cat,
       amount,
       percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0,
-      ...CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Other']
+      ...dynamicCategoryConfig[cat] || dynamicCategoryConfig['Other']
     }))
     .sort((a,b) => b.amount - a.amount);
 
+  const calculateMonthly = (expense: any) => {
+    if (expense.frequency === 'monthly') return expense.amount;
+    if (expense.frequency === 'weekly') return expense.amount * 4;
+    return 0; // One-time or yearly are not counted in a strict monthly recurring
+  };
+
+  const calculateYearly = (expense: any) => {
+    if (expense.frequency === 'yearly') return expense.amount;
+    return 0;
+  };
+
+  const totalMonthlyRecurring = expenses.reduce((acc, curr) => acc + calculateMonthly(curr), 0);
+  const totalPlannedYearly = expenses.reduce((acc, curr) => acc + calculateYearly(curr), 0);
+
   return (
     <div className="space-y-8 animate-in fade-in zoom-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-             <CreditCard className="text-indigo-400" />
-             Gestión de Gastos
-           </h2>
-           <p className="text-slate-400">Registra y analiza tus salidas de dinero.</p>
-        </div>
+      <div className="glass-card p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-linear-to-r from-rose-500/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
         
-        <button 
-          onClick={() => setIsFormOpen(true)}
-          className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all active:scale-95 flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Registrar Nuevo Gasto
-        </button>
+        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6 w-full">
+           <div className="flex items-center gap-6">
+             <div className="p-4 rounded-2xl bg-rose-500/20 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                <TrendingDown size={32} />
+             </div>
+             <div>
+                <h3 className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Gasto Mensual Recurrente</h3>
+                <div className="flex items-baseline gap-2">
+                   <span className="text-5xl font-black text-white tracking-tighter shadow-rose-500/50 drop-shadow-sm">
+                     ${totalMonthlyRecurring.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                   </span>
+                </div>
+             </div>
+           </div>
+           
+           <div className="sm:ml-8 sm:pl-8 sm:border-l border-slate-800 flex items-center gap-4 self-stretch">
+              <div>
+                <h3 className="text-slate-500 font-bold uppercase tracking-wider text-xs mb-1">Gastos Planeados Anuales</h3>
+                <span className="text-2xl font-black text-slate-300">
+                   ${totalPlannedYearly.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+           </div>
+           
+           <div className="flex-1" />
+           
+           <button 
+             onClick={() => setIsFormOpen(true)}
+             className="relative z-10 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto mt-4 sm:mt-0"
+           >
+             <Plus size={20} />
+             Nuevo Gasto
+           </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -95,7 +144,7 @@ export const ExpenseView: React.FC = () => {
                       </div>
                    ) : (
                       expenses.map((expense) => {
-                         const config = CATEGORY_CONFIG[expense.category] || CATEGORY_CONFIG['Other'];
+                         const config = dynamicCategoryConfig[expense.category] || dynamicCategoryConfig['Other'];
                          const Icon = config.icon;
                          
                          return (

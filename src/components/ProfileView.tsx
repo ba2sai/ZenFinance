@@ -6,7 +6,7 @@ import { updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/aut
 import { auth } from '../firebase';
 import { GoogleCalendarService } from '../services/GoogleCalendarService';
 import { useGamification } from '../hooks/useGamification';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const ProfileView: React.FC = () => {
   const { user, logout, googleAccessToken, orgId } = useAuthStore();
@@ -51,6 +51,12 @@ export const ProfileView: React.FC = () => {
      } catch (err) {
        console.error(err);
      }
+  };  // Toast State
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+     setToastMsg(msg);
+     setTimeout(() => setToastMsg(null), 3000);
   };
 
   const handleUpdateProfile = async () => {
@@ -194,7 +200,21 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-20">
+    <div className="space-y-6 max-w-4xl mx-auto pb-20 relative">
+      <AnimatePresence>
+         {toastMsg && (
+            <motion.div 
+               initial={{ opacity: 0, y: -20 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -20 }}
+               className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2"
+            >
+               <Check size={18} />
+               {toastMsg}
+            </motion.div>
+         )}
+      </AnimatePresence>
+
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-3xl font-black text-white">Mi Perfil</h2>
@@ -346,7 +366,7 @@ export const ProfileView: React.FC = () => {
          </div>
 
         {/* Settings Card */}
-        <div className="glass-card p-8 rounded-3xl space-y-6">
+        <div className="glass-card p-8 rounded-3xl col-span-1 md:col-span-1 space-y-6">
            <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Monitor size={20} className="text-purple-400" />
               Preferencias
@@ -358,14 +378,19 @@ export const ProfileView: React.FC = () => {
                     <p className="text-white font-medium">Idioma</p>
                     <p className="text-xs text-slate-500">Idioma de la aplicación</p>
                  </div>
-                 <select 
-                   value={language}
-                   onChange={(e) => setLanguage(e.target.value)}
-                   className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 outline-none p-2 cursor-pointer"
-                 >
-                   <option value="es">Español (ES)</option>
-                   <option value="en">English (US)</option>
-                 </select>
+                 <div className="flex items-center gap-2">
+                     <select 
+                       value={language}
+                       onChange={(e) => {
+                         setLanguage(e.target.value);
+                         showToast("Idioma actualizado");
+                       }}
+                       className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 outline-none p-2 cursor-pointer w-full max-w-[140px]"
+                     >
+                       <option value="es">Español (ES)</option>
+                       <option value="en">English (US)</option>
+                     </select>
+                  </div>
               </div>
 
               <div className="flex justify-between items-center p-3 rounded-xl hover:bg-white/5 transition-colors group">
@@ -373,19 +398,24 @@ export const ProfileView: React.FC = () => {
                     <p className="text-white font-medium">Moneda</p>
                     <p className="text-xs text-slate-500">Divisa principal</p>
                  </div>
-                 <select 
-                   value={currency}
-                   onChange={(e) => setCurrency(e.target.value)}
-                   className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 outline-none p-2 cursor-pointer"
-                 >
-                   <option value="USD">USD ($)</option>
-                   <option value="EUR">EUR (€)</option>
-                   <option value="COP">COP ($)</option>
-                   <option value="MXN">MXN ($)</option>
-                   <option value="ARS">ARS ($)</option>
-                   <option value="CLP">CLP ($)</option>
-                   <option value="PEN">PEN (S/)</option>
-                 </select>
+                 <div className="flex items-center gap-2">
+                     <select 
+                       value={currency}
+                       onChange={(e) => {
+                         setCurrency(e.target.value);
+                         showToast("Moneda actualizada");
+                       }}
+                       className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 outline-none p-2 cursor-pointer w-full max-w-[140px]"
+                     >
+                       <option value="USD">USD ($)</option>
+                       <option value="EUR">EUR (€)</option>
+                       <option value="COP">COP ($)</option>
+                       <option value="MXN">MXN ($)</option>
+                       <option value="ARS">ARS ($)</option>
+                       <option value="CLP">CLP ($)</option>
+                       <option value="PEN">PEN (S/)</option>
+                     </select>
+                  </div>
               </div>
 
               <div className="pt-4 border-t border-slate-800">
@@ -412,20 +442,20 @@ export const ProfileView: React.FC = () => {
          </div>
 
         {/* Categories Card */}
-        <div className="glass-card p-8 rounded-3xl space-y-6">
+        <div className="glass-card p-8 rounded-3xl col-span-1 md:col-span-2 space-y-6">
            <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <FolderPlus size={20} className="text-pink-400" />
               Categorías Personalizadas
            </h3>
 
-           <div className="space-y-4">
+            <div className="space-y-4">
               <p className="text-sm text-slate-400">Agrega tus propias categorías para clasificar tus ingresos y gastos.</p>
               
-              <div className="flex gap-2">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full">
                  <select 
                    value={newCatType}
                    onChange={e => setNewCatType(e.target.value as 'income' | 'expense')}
-                   className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 outline-none p-2"
+                   className="shrink-0 bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 outline-none p-2"
                  >
                     <option value="expense">Gasto</option>
                     <option value="income">Ingreso</option>
@@ -436,13 +466,13 @@ export const ProfileView: React.FC = () => {
                    placeholder="Nombre..."
                    value={newCatName}
                    onChange={e => setNewCatName(e.target.value)}
-                   className="flex-1 bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 outline-none p-2 px-3"
+                   className="flex-1 min-w-[120px] max-w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-pink-500 focus:border-pink-500 outline-none p-2 px-3"
                  />
                  
                  <button
                    onClick={handleAddCategory}
                    disabled={catLoading || !newCatName.trim()}
-                   className="px-4 bg-pink-600 hover:bg-pink-500 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                   className="shrink-0 px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-12 h-10"
                  >
                    {catLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                  </button>
@@ -472,7 +502,7 @@ export const ProfileView: React.FC = () => {
         </div>
 
         {/* Integrations Card */}
-        <div className="glass-card p-8 rounded-3xl space-y-6">
+        <div className="glass-card p-8 rounded-3xl col-span-1 md:col-span-2 space-y-6">
            <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Calendar size={20} className="text-emerald-400" />
               Integraciones

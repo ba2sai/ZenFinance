@@ -135,7 +135,7 @@ export const OnboardingWizard: React.FC = () => {
           <motion.div 
             initial={{ width: '0%' }}
             animate={{ width: `${(step / 3) * 100}%` }}
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+            className="h-full bg-linear-to-r from-indigo-500 to-purple-500"
           />
         </div>
 

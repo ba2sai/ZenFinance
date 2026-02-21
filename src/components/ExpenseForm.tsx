@@ -21,7 +21,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
-  const [frequency, setFrequency] = useState<'one-time' | 'monthly' | 'weekly'>('one-time');
+  const [frequency, setFrequency] = useState<'one-time' | 'monthly' | 'weekly' | 'yearly'>('one-time');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [recurrenceDays, setRecurrenceDays] = useState<number[]>([new Date().getDate()]);
   const [loading, setLoading] = useState(false);
@@ -125,8 +125,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
 
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Frecuencia</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['one-time', 'monthly', 'weekly'] as const).map((f) => (
+              <div className="grid grid-cols-4 gap-2">
+                {(['one-time', 'weekly', 'monthly', 'yearly'] as const).map((f) => (
                   <button
                     key={f}
                     type="button"
@@ -137,7 +137,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
                         : 'bg-white/5 text-slate-400 hover:bg-white/10'
                     }`}
                   >
-                    {f === 'one-time' ? 'Único' : f === 'weekly' ? 'Semanal' : 'Mensual'}
+                    {f === 'one-time' ? 'Único' : f === 'weekly' ? 'Semanal' : f === 'monthly' ? 'Mensual' : 'Anual'}
                   </button>
                 ))}
               </div>

@@ -24,6 +24,19 @@ export const ScenarioSimulator: React.FC = () => {
     return defaultItems;
   });
 
+  // Sync real data if mounted before Firebase loading completed
+  React.useEffect(() => {
+    const hasRealItems = items.some(i => !i.isMock);
+    if (!hasRealItems && (incomes.length > 0 || expenses.length > 0 || recurringExpenses.length > 0)) {
+      setItems(prev => [
+        ...incomes.map(i => ({ id: `inc_${i.id}`, name: i.source, amount: Number(i.amount), type: 'income' as const, active: true, isMock: false })),
+        ...expenses.map(e => ({ id: `exp_${e.id}`, name: e.description, amount: Number(e.amount), type: 'expense' as const, active: true, isMock: false })),
+        ...recurringExpenses.map(r => ({ id: `rec_${r.id}`, name: r.name, amount: Number(r.amount), type: 'recurring' as const, active: true, isMock: false })),
+        ...prev.filter(i => i.isMock) // Preserve hypothetical items already created
+      ]);
+    }
+  }, [incomes.length, expenses.length, recurringExpenses.length]);
+
   const [newItemName, setNewItemName] = useState('');
   const [newItemAmount, setNewItemAmount] = useState('');
   const [newItemType, setNewItemType] = useState<'income' | 'expense'>('expense');
@@ -55,18 +68,22 @@ export const ScenarioSimulator: React.FC = () => {
   };
 
   const resetSimulation = () => {
-      setItems([
-          ...incomes.map(i => ({ id: `inc_${i.id}`, name: i.source, amount: i.amount, type: 'income' as const, active: true, isMock: false })),
-          ...expenses.map(e => ({ id: `exp_${e.id}`, name: e.description, amount: e.amount, type: 'expense' as const, active: true, isMock: false })),
-          ...recurringExpenses.map(r => ({ id: `rec_${r.id}`, name: r.name, amount: r.amount, type: 'recurring' as const, active: true, isMock: false }))
-      ]);
+      setItems(prev => {
+          const mockItems = prev.filter(i => i.isMock);
+          return [
+              ...incomes.map(i => ({ id: `inc_${i.id}`, name: i.source, amount: Number(i.amount), type: 'income' as const, active: true, isMock: false })),
+              ...expenses.map(e => ({ id: `exp_${e.id}`, name: e.description, amount: Number(e.amount), type: 'expense' as const, active: true, isMock: false })),
+              ...recurringExpenses.map(r => ({ id: `rec_${r.id}`, name: r.name, amount: Number(r.amount), type: 'recurring' as const, active: true, isMock: false })),
+              ...mockItems
+          ];
+      });
   };
 
   // Calculations
   const calcMetrics = (currentItems: SimulatedItem[]) => {
       const activeItems = currentItems.filter(i => i.active);
-      const totalIncome = activeItems.filter(i => i.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-      const totalExpense = activeItems.filter(i => i.type !== 'income').reduce((acc, curr) => acc + curr.amount, 0);
+      const totalIncome = activeItems.filter(i => i.type === 'income').reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+      const totalExpense = activeItems.filter(i => i.type !== 'income').reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
       const freeBudget = totalIncome - totalExpense;
       const peaceFactor = totalIncome > 0 ? Math.max(0, Math.min(100, Math.round((freeBudget / totalIncome) * 100))) : 0;
       
