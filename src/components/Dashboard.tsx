@@ -89,6 +89,7 @@ export const Dashboard: React.FC = () => {
   const savingsRate = totalMonthlyIncome > 0 ? Math.round((finance.savingsGoals.reduce((acc, curr) => acc + curr.current, 0) / totalMonthlyIncome) * 100) : 0;
   const hasEmergencyFund = finance.savingsGoals.some(g => g.name.toLowerCase().includes('emergencia') && g.current >= g.target);
 
+  const annualPlan = finance.savingsGoals.find(g => g.name === 'Plan de Ahorro Anual');
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in duration-500 pb-10">
@@ -176,6 +177,43 @@ export const Dashboard: React.FC = () => {
             compact={true}
          />
       </div>
+
+      {/* Annual Savings Plan Widget */}
+      {annualPlan && (
+         <div className="glass-card p-6 rounded-3xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-linear-to-r from-emerald-500/10 to-teal-500/10 pointer-events-none" />
+            <div className="relative z-10">
+               <div className="flex justify-between items-center mb-4">
+                  <div>
+                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span>🎯</span> Plan de Ahorro Anual
+                     </h3>
+                     <p className="text-slate-400 text-sm font-medium">Mantén la consistencia y logra tus metas a largo plazo.</p>
+                  </div>
+                  <div className="text-right">
+                     <p className="text-2xl font-black text-emerald-400 tracking-tight">${annualPlan.current.toLocaleString()}</p>
+                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">de ${annualPlan.target.toLocaleString()}</p>
+                  </div>
+               </div>
+               
+               <div className="relative pt-1">
+                  <div className="flex mb-2 items-center justify-between">
+                     <div>
+                        <span className="text-xs font-semibold inline-block text-emerald-400">
+                           {Math.round((annualPlan.current / annualPlan.target) * 100)}% Completado
+                        </span>
+                     </div>
+                  </div>
+                  <div className="overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-slate-800">
+                     <div 
+                        style={{ width: `${Math.min(100, (annualPlan.current / annualPlan.target) * 100)}%` }} 
+                        className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-linear-to-r from-emerald-500 to-teal-500"
+                     />
+                  </div>
+               </div>
+            </div>
+         </div>
+      )}
 
       {/* Middle Section: Payments & Goals */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

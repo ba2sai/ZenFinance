@@ -55,11 +55,22 @@ export const analyzeFinancialFlow = onCall(async (request) => {
             timestamp: FieldValue.serverTimestamp(),
             rating: null
         });
-        return { status: "success", analysis };
+        return {
+            status: "success",
+            data: { analysis },
+            metadata: { timestamp: new Date().toISOString() }
+        };
     }
     catch (error) {
         console.error("Analysis Error:", error);
-        throw new HttpsError("internal", error.message);
+        return {
+            status: "error",
+            data: null,
+            metadata: {
+                timestamp: new Date().toISOString(),
+                errorMsg: error.message || "Error generating analysis"
+            }
+        };
     }
 });
 export const handleAdviceFeedback = onCall(async (request) => {
@@ -81,11 +92,22 @@ export const handleAdviceFeedback = onCall(async (request) => {
                 timestamp: FieldValue.serverTimestamp()
             });
         }
-        return { status: "success" };
+        return {
+            status: "success",
+            data: { message: "Feedback saved" },
+            metadata: { timestamp: new Date().toISOString() }
+        };
     }
     catch (error) {
         console.error("Feedback Error:", error);
-        throw new HttpsError("internal", error.message);
+        return {
+            status: "error",
+            data: null,
+            metadata: {
+                timestamp: new Date().toISOString(),
+                errorMsg: error.message || "Failed to save feedback"
+            }
+        };
     }
 });
 //# sourceMappingURL=financialEngine.js.map

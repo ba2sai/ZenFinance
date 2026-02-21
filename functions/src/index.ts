@@ -61,7 +61,11 @@ export const setupOrganization = onCall(async (request) => {
 
   // Check if user already has orgId
   if (auth.token.orgId) {
-    return { status: "success", message: "User already has an organization", orgId: auth.token.orgId };
+    return { 
+        status: "success", 
+        data: { message: "User already has an organization", orgId: auth.token.orgId },
+        metadata: { timestamp: new Date().toISOString() }
+    };
   }
 
   const orgRef = db.collection("organizations").doc();
@@ -89,9 +93,20 @@ export const setupOrganization = onCall(async (request) => {
       createdAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return { status: "success", orgId };
+    return { 
+        status: "success", 
+        data: { orgId },
+        metadata: { timestamp: new Date().toISOString() }
+    };
   } catch (error: any) {
     console.error("Error setting up organization:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    return {
+        status: "error",
+        data: null,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            errorMsg: error.message || "Internal server error"
+        }
+    };
   }
 });

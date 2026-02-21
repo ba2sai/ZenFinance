@@ -61,8 +61,7 @@ export const ZenAdvisor: React.FC<ZenAdvisorProps> = ({ peaceFactor, savingsRate
 
       const analyzeFn = httpsCallable(functions, 'analyzeFinancialFlow');
       
-      // Pass the NEW comprehensive payload to the backend
-      await analyzeFn({ 
+      const response: any = await analyzeFn({ 
         expenses, 
         income: incomes,
         history, 
@@ -74,6 +73,9 @@ export const ZenAdvisor: React.FC<ZenAdvisorProps> = ({ peaceFactor, savingsRate
         } 
       });
       
+      if (response.data?.status === 'error') {
+          throw new Error(response.data.metadata?.errorMsg || "Error from analyze module");
+      }
       // The Cloud Function should create a new advice document, which this component will pick up via snapshot listener
     } catch (error) {
       console.error("Error requesting advice:", error);

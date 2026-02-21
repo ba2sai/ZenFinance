@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useFinanceStore } from '../store/useFinanceStore';
-import { User, Mail, Edit2, LogOut, Check, X, Shield, Globe, Monitor } from 'lucide-react';
-import { updateProfile } from 'firebase/auth';
+import { User, Mail, Edit2, LogOut, Check, X, Shield, Globe, Monitor, Calendar, Award, Flame } from 'lucide-react';
+import { updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebase';
+import { GoogleCalendarService } from '../services/GoogleCalendarService';
+import { useGamification } from '../hooks/useGamification';
+import { motion } from 'framer-motion';
 
 export const ProfileView: React.FC = () => {
-  const { user, logout } = useAuthStore();
-  const { clearFinanceData } = useFinanceStore();
+  const { user, logout, googleAccessToken, orgId } = useAuthStore();
+  const { clearFinanceData, incomes, recurringExpenses, savingsGoals, addSavingGoal, removeSavingGoal, language, currency, setLanguage, setCurrency, expenses } = useFinanceStore();
+  const { currentBelt, badges, streak } = useGamification();
   
+  const isGoogleUser = user?.providerData.some(p => p.providerId === 'google.com');
+
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
 
   const handleUpdateProfile = async () => {
     if (!auth.currentUser) return;
@@ -36,6 +44,122 @@ export const ProfileView: React.FC = () => {
   const handleLogout = async () => {
       await logout();
       clearFinanceData();
+  };
+
+  const handleSyncCalendar = async () => {
+      if (!googleAccessToken) return;
+      setSyncing(true);
+      setSyncMessage('Sincronizando...');
+      try {
+          const service = new GoogleCalendarService(googleAccessToken);
+          await service.syncFinancials(incomes, recurringExpenses);
+          setSyncMessage('¡Sincronización exitosa!');
+          setTimeout(() => setSyncMessage(''), 3000);
+      } catch (error) {
+          console.error("Error sincronizando:", error);
+          setSyncMessage('Hubo un error al sincronizar.');
+      } finally {
+          setSyncing(false);
+      }
+  };
+
+  const handleConnectCalendar = async () => {
+      setSyncing(true);
+      setSyncMessage('');
+      try {
+          const provider = new GoogleAuthProvider();
+          provider.addScope('https://www.googleapis.com/auth/calendar.events');
+          const result = await signInWithPopup(auth, provider);
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          if (credential?.accessToken) {
+              useAuthStore.getState().setGoogleAccessToken(credential.accessToken);
+              setSyncMessage('¡Calendario conectado!');
+              setTimeout(() => setSyncMessage(''), 3000);
+          }
+      } catch (error) {
+          console.error("Error conectando calendario:", error);
+          setSyncMessage('Error al conectar Google Calendar.');
+          setTimeout(() => setSyncMessage(''), 3000);
+      } finally {
+          setSyncing(false);
+      }
+  };
+
+  const annualSavingsPlan = savingsGoals?.find(g => g.name === 'Plan de Ahorro Anual');
+  const isAnnualPlanEnabled = !!annualSavingsPlan;
+
+  const handleToggleAnnualPlan = async () => {
+    if (!orgId) return;
+    try {
+       if (isAnnualPlanEnabled && annualSavingsPlan) {
+         await removeSavingGoal(annualSavingsPlan.id);
+       } else {
+         await addSavingGoal({
+           name: 'Plan de Ahorro Anual',
+           target: 10000, 
+           current: 0,
+           icon: '🎯',
+           organizationId: orgId
+         });
+       }
+    } catch (error) {
+       console.error("Error toggling annual plan:", error);
+       alert("Hubo un error al activar/desactivar el plan. Si los errores persisten, por favor recarga la página (F5).");
+    }
+  };
+
+  const handleDownloadICS = () => {
+    let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZenFinance//ES\n";
+    
+    const formatDate = (dateValue: string) => {
+        const d = new Date(dateValue);
+        return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    const addEvent = (title: string, date: string, amount: number, isIncome: boolean, rrule?: string) => {
+        const uid = Math.random().toString(36).substring(2) + "@zenfinance.app";
+        const prefix = isIncome ? '🟢 Ingreso' : '🔴 Gasto';
+        const start = formatDate(date);
+        let event = `BEGIN:VEVENT\nUID:${uid}\nDTSTAMP:${start}\nDTSTART;VALUE=DATE:${start.substring(0,8)}\nSUMMARY:${prefix}: ${title} ($${amount})\n`;
+        if (rrule) event += `RRULE:${rrule}\n`;
+        event += "END:VEVENT\n";
+        icsContent += event;
+    };
+
+    incomes.forEach(inc => {
+        if (inc.frequency === 'one-time' && inc.date) {
+            addEvent(inc.source, inc.date, inc.amount, true);
+        } else if (inc.recurrenceDays && inc.recurrenceDays.length > 0) {
+            const today = new Date();
+            const startDate = new Date(today.getFullYear(), today.getMonth(), inc.recurrenceDays[0]).toISOString();
+            const rrule = `FREQ=MONTHLY;BYMONTHDAY=${inc.recurrenceDays.join(',')}`;
+            addEvent(inc.source, startDate, inc.amount, true, rrule);
+        }
+    });
+
+    expenses.forEach(exp => {
+        if (exp.frequency === 'one-time' && exp.date) {
+            addEvent(exp.description, exp.date, exp.amount, false);
+        } else if (exp.frequency === 'weekly') {
+            const today = new Date().toISOString();
+            addEvent(exp.description, today, exp.amount, false, 'FREQ=WEEKLY');
+        } else if (exp.frequency === 'monthly' && exp.recurrenceDays && exp.recurrenceDays.length > 0) {
+            const today = new Date();
+            const startDate = new Date(today.getFullYear(), today.getMonth(), exp.recurrenceDays[0]).toISOString();
+            const rrule = `FREQ=MONTHLY;BYMONTHDAY=${exp.recurrenceDays.join(',')}`;
+            addEvent(exp.description, startDate, exp.amount, false, rrule);
+        }
+    });
+
+    icsContent += "END:VCALENDAR";
+    
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'ZenFinance_Calendario.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -145,6 +269,51 @@ export const ProfileView: React.FC = () => {
            </div>
         </div>
 
+         {/* Gamification Card */}
+         <div className="glass-card p-8 rounded-3xl col-span-1 md:col-span-3 space-y-6">
+            <div className="flex justify-between items-center">
+               <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <Award className="text-amber-400" />
+                  Logros Zen
+               </h3>
+               <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-400 font-bold text-sm">
+                  <Flame size={16} /> {streak} Días de Racha
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+               {/* Belt Card */}
+               <div className={`col-span-1 p-6 rounded-2xl flex flex-col items-center justify-center text-center space-y-2 border border-white/5 ${currentBelt.color}`}>
+                  <span className="text-4xl">🥋</span>
+                  <span className="font-black text-lg">{currentBelt.name}</span>
+                  <p className="text-xs opacity-80">Nivel Actual</p>
+               </div>
+
+               {/* Badges */}
+               <div className="col-span-1 md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {badges.map(badge => (
+                     <div key={badge.id} className={`p-4 rounded-2xl border ${badge.unlocked ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-slate-900/50 border-slate-800 opacity-50'} flex flex-col items-center text-center relative overflow-hidden`}>
+                        <span className="text-3xl mb-2">{badge.icon}</span>
+                        <h4 className={`font-bold mb-1 ${badge.unlocked ? 'text-indigo-400' : 'text-slate-500'}`}>{badge.name}</h4>
+                        <p className="text-xs text-slate-400">{badge.description}</p>
+                        
+                        {!badge.unlocked && badge.progress !== undefined && (
+                           <div className="w-full h-1.5 bg-slate-800 rounded-full mt-3 overflow-hidden">
+                              <div className="h-full bg-slate-500 rounded-full" style={{ width: `${Math.min(100, Math.max(0, badge.progress))}%` }} />
+                           </div>
+                        )}
+                        
+                        {badge.unlocked && (
+                           <div className="absolute top-2 right-2 flex items-center justify-center w-5 h-5 bg-indigo-500 rounded-full text-white">
+                              <Check size={12} strokeWidth={4} />
+                           </div>
+                        )}
+                     </div>
+                  ))}
+               </div>
+            </div>
+         </div>
+
         {/* Settings Card */}
         <div className="glass-card p-8 rounded-3xl space-y-6">
            <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -153,26 +322,130 @@ export const ProfileView: React.FC = () => {
            </h3>
 
            <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+              <div className="flex justify-between items-center p-3 rounded-xl hover:bg-white/5 transition-colors group">
                  <div>
-                    <p className="text-white font-medium">Tema</p>
-                    <p className="text-xs text-slate-500">Apariencia de la app</p>
+                    <p className="text-white font-medium">Idioma</p>
+                    <p className="text-xs text-slate-500">Idioma de la aplicación</p>
                  </div>
-                 <span className="text-slate-400 text-sm group-hover:text-white transition-colors">Oscuro (Default)</span>
+                 <select 
+                   value={language}
+                   onChange={(e) => setLanguage(e.target.value)}
+                   className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 outline-none p-2 cursor-pointer"
+                 >
+                   <option value="es">Español (ES)</option>
+                   <option value="en">English (US)</option>
+                 </select>
               </div>
 
-              <div className="flex justify-between items-center p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+              <div className="flex justify-between items-center p-3 rounded-xl hover:bg-white/5 transition-colors group">
                  <div>
                     <p className="text-white font-medium">Moneda</p>
                     <p className="text-xs text-slate-500">Divisa principal</p>
                  </div>
-                 <span className="text-slate-400 text-sm group-hover:text-white transition-colors">USD ($)</span>
+                 <select 
+                   value={currency}
+                   onChange={(e) => setCurrency(e.target.value)}
+                   className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 outline-none p-2 cursor-pointer"
+                 >
+                   <option value="USD">USD ($)</option>
+                   <option value="EUR">EUR (€)</option>
+                   <option value="COP">COP ($)</option>
+                   <option value="MXN">MXN ($)</option>
+                   <option value="ARS">ARS ($)</option>
+                   <option value="CLP">CLP ($)</option>
+                   <option value="PEN">PEN (S/)</option>
+                 </select>
               </div>
 
               <div className="pt-4 border-t border-slate-800">
+                 <div className="flex justify-between items-center p-3 rounded-xl hover:bg-white/5 transition-colors">
+                    <div>
+                       <p className="text-white font-medium">Plan de Ahorro Anual</p>
+                       <p className="text-xs text-slate-500">Activa un reto para ahorrar todo el año.</p>
+                    </div>
+                    <button 
+                       onClick={handleToggleAnnualPlan}
+                       className={`w-12 h-6 rounded-full flex items-center transition-colors p-1 ${isAnnualPlanEnabled ? 'bg-emerald-500 justify-end' : 'bg-slate-700 justify-start'}`}
+                    >
+                       <motion.div layout className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                    </button>
+                 </div>
+              </div>
+
+               <div className="pt-4 border-t border-slate-800">
                  <button className="w-full py-2 text-sm text-slate-500 hover:text-rose-400 transition-colors">
                     Borrar todos mis datos
                  </button>
+              </div>
+           </div>
+        </div>
+
+        {/* Integrations Card */}
+        <div className="glass-card p-8 rounded-3xl space-y-6">
+           <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Calendar size={20} className="text-emerald-400" />
+              Integraciones
+           </h3>
+
+           <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 space-y-3">
+                 <div>
+                    <p className="text-white font-medium flex items-center gap-2">
+                       Calendario Local (.ics)
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 mb-2">Descarga un archivo compatible con Apple Calendar, Outlook y otros.</p>
+                    <button 
+                        onClick={handleDownloadICS}
+                        className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-bold transition-colors flex justify-center items-center gap-2 border border-slate-700 hover:border-slate-600"
+                    >
+                        <Calendar size={16} />
+                        Descargar .ics
+                    </button>
+                 </div>
+
+                 <div className="pt-4 border-t border-slate-800">
+                    <p className="text-white font-medium flex items-center gap-2">
+                       Google Calendar
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 mb-3">Sincronización en la nube directa con tu cuenta.</p>
+                 </div>
+                 
+                 {googleAccessToken ? (
+                     <button 
+                        onClick={handleSyncCalendar}
+                        disabled={syncing}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                     >
+                        {syncing ? (
+                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                             <Calendar size={16} />
+                        )}
+                        {syncing ? 'Procesando...' : 'Sincronizar Eventos'}
+                     </button>
+                 ) : isGoogleUser ? (
+                     <button 
+                        onClick={handleConnectCalendar}
+                        disabled={syncing}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                     >
+                        {syncing ? (
+                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                             <Calendar size={16} />
+                        )}
+                        Conectar Calendario
+                     </button>
+                 ) : (
+                     <p className="text-xs text-amber-400 bg-amber-400/10 p-2 rounded-lg border border-amber-400/20 text-center">
+                         Inicia sesión con Google para usar esta función.
+                     </p>
+                 )}
+                 {syncMessage && (
+                     <p className={`text-xs text-center font-bold ${syncMessage.includes('error') ? 'text-rose-400' : 'text-emerald-400'}`}>
+                         {syncMessage}
+                     </p>
+                 )}
               </div>
            </div>
         </div>

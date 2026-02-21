@@ -9,7 +9,8 @@ import {
   addDoc, 
   deleteDoc, 
   doc, 
-  updateDoc 
+  updateDoc,
+  limit
 } from 'firebase/firestore';
 
 export interface Expense {
@@ -69,8 +70,13 @@ interface FinanceState {
   };
   loading: boolean;
   permissionError: boolean;
+  isHistoryLoaded: boolean;
+  language: string;
+  currency: string;
   
   // Actions
+  setLanguage: (lang: string) => void;
+  setCurrency: (currency: string) => void;
   addIncome: (income: Omit<Income, 'id'>) => Promise<void>;
   removeIncome: (id: string) => Promise<void>;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
@@ -83,8 +89,8 @@ interface FinanceState {
   setIncomes: (incomes: Income[]) => void;
   setExpenses: (expenses: Expense[]) => void;
   setRecurringExpenses: (expenses: RecurringExpense[]) => void;
-  setSavingsGoals: (savingsGoals: SavingGoal[]) => void; // Added this setter for consistency
-  subscribeToFinancials: (orgId: string) => Unsubscribe[];
+  setSavingsGoals: (savingsGoals: SavingGoal[]) => void;
+  subscribeToFinancials: (orgId: string, options?: { loadAllHistory?: boolean }) => Unsubscribe[];
   clearFinanceData: () => void;
   clearPermissionError: () => void;
 }
@@ -101,12 +107,24 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   },
   loading: false,
   permissionError: false,
+  isHistoryLoaded: false,
+  language: localStorage.getItem('zen_lang') || 'es',
+  currency: localStorage.getItem('zen_currency') || 'USD',
+
+  setLanguage: (lang) => {
+    localStorage.setItem('zen_lang', lang);
+    set({ language: lang });
+  },
+  setCurrency: (currency) => {
+    localStorage.setItem('zen_currency', currency);
+    set({ currency });
+  },
 
   setExpenses: (expenses) => set({ expenses }),
   setRecurringExpenses: (recurringExpenses) => set({ recurringExpenses }),
   setIncomes: (incomes) => set({ incomes }),
-  setSavingsGoals: (savingsGoals) => set({ savingsGoals }), // Added this setter for consistency
-  clearFinanceData: () => set({ expenses: [], recurringExpenses: [], incomes: [], savingsGoals: [] }),
+  setSavingsGoals: (savingsGoals) => set({ savingsGoals }),
+  clearFinanceData: () => set({ expenses: [], recurringExpenses: [], incomes: [], savingsGoals: [], isHistoryLoaded: false }),
   clearPermissionError: () => set({ permissionError: false }),
 
   addIncome: async (income) => {
@@ -182,16 +200,21 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   },
 
 
-  subscribeToFinancials: (orgId: string) => {
+  subscribeToFinancials: (orgId: string, options = { loadAllHistory: false }) => {
     if (!orgId || orgId === 'default-org') {
       console.warn("Invalid orgId for subscription:", orgId);
       return [];
     }
     
-    set({ loading: true, permissionError: false });
+    set({ loading: true, permissionError: false, isHistoryLoaded: options.loadAllHistory });
     
     // Subscribe to multiple collections
-    const collections = ['expenses', 'incomes', 'recurring_expenses', 'saving_goals'];
+    const collectionsConfig = [
+      { name: 'expenses', canPaginate: true },
+      { name: 'incomes', canPaginate: true },
+      { name: 'recurring_expenses', canPaginate: false },
+      { name: 'saving_goals', canPaginate: false }
+    ];
     const unsubs: Unsubscribe[] = [];
 
     // Helper to sync state based on collection name
@@ -202,18 +225,27 @@ export const useFinanceStore = create<FinanceState>((set) => ({
         if (col === 'saving_goals') set({ savingsGoals: data as SavingGoal[] });
     };
 
-    collections.forEach(col => {
-      const q = query(collection(db, col), where('organizationId', '==', orgId));
+    collectionsConfig.forEach(col => {
+      let q = query(collection(db, col.name), where('organizationId', '==', orgId));
+      
+      if (!options.loadAllHistory && col.canPaginate) {
+         // Apply limit for regular loading to optimize reads
+         // Note: orderBy requires a composite index, falling back to simple limit for now
+         q = query(q, limit(100)); 
+      }
+
       const unsub = onSnapshot(q, 
         (snapshot) => {
           const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          syncState(col, data);
+          syncState(col.name, data);
           set({ loading: false });
         },
         (error) => {
-          console.error(`Error subscribing to ${col}:`, error);
+          console.error(`Error subscribing to ${col.name}:`, error);
           if (error.code === 'permission-denied') {
             set({ permissionError: true, loading: false });
+          } else if (error.code === 'failed-precondition') {
+             console.error(`Index missing for ${col.name}. Please click the URL in the Firebase console error to create it.`);
           }
         }
       );

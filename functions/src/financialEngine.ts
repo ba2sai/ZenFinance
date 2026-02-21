@@ -61,10 +61,21 @@ export const analyzeFinancialFlow = onCall(async (request) => {
       rating: null
     });
 
-    return { status: "success", analysis };
+    return { 
+        status: "success", 
+        data: { analysis },
+        metadata: { timestamp: new Date().toISOString() }
+    };
   } catch (error: any) {
     console.error("Analysis Error:", error);
-    throw new HttpsError("internal", error.message);
+    return {
+        status: "error",
+        data: null,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            errorMsg: error.message || "Error generating analysis"
+        }
+    };
   }
 });
 
@@ -90,9 +101,20 @@ export const handleAdviceFeedback = onCall(async (request) => {
       });
     }
 
-    return { status: "success" };
+    return { 
+        status: "success", 
+        data: { message: "Feedback saved" },
+        metadata: { timestamp: new Date().toISOString() }
+    };
   } catch (error: any) {
     console.error("Feedback Error:", error);
-    throw new HttpsError("internal", error.message);
+    return {
+        status: "error",
+        data: null,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            errorMsg: error.message || "Failed to save feedback"
+        }
+    };
   }
 });

@@ -14,6 +14,7 @@ import { SubscriptionAudit } from './components/SubscriptionAudit';
 import { PeaceView } from './components/PeaceView';
 import { Dashboard } from './components/Dashboard';
 import { ProfileView } from './components/ProfileView';
+import { ScenarioSimulator } from './components/ScenarioSimulator';
 
 function App() {
   const auth = useAuthStore();
@@ -60,6 +61,7 @@ function App() {
                {activeView === 'savings' && 'Metas de Ahorro'}
                {activeView === 'subs' && 'Auditoría de Suscripciones'}
                {activeView === 'peace' && 'Mi Paz Mental'}
+               {activeView === 'scenario' && 'Simulador de Escenarios'}
                {activeView === 'profile' && 'Mi Perfil'}
              </h2>
              <p className="text-slate-400 font-medium mt-1">
@@ -85,6 +87,7 @@ function App() {
           {activeView === 'savings' && <SavingsView />}
           {activeView === 'subs' && <SubscriptionAudit />}
           {activeView === 'peace' && <PeaceView />}
+          {activeView === 'scenario' && <ScenarioSimulator />}
           {activeView === 'profile' && <ProfileView />}
         </div>
       </main>

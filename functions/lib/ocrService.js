@@ -25,11 +25,22 @@ export const processUploadedFile = onCall(async (request) => {
         const responseText = result.response.text();
         const jsonMatch = responseText.match(/\[.*\]/s);
         const transactions = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-        return { status: "success", transactions };
+        return {
+            status: "success",
+            data: { transactions },
+            metadata: { timestamp: new Date().toISOString() }
+        };
     }
     catch (error) {
         console.error("OCR Error:", error);
-        throw new HttpsError("internal", error.message);
+        return {
+            status: "error",
+            data: null,
+            metadata: {
+                timestamp: new Date().toISOString(),
+                errorMsg: error.message || "Error processing file via AI"
+            }
+        };
     }
 });
 //# sourceMappingURL=ocrService.js.map

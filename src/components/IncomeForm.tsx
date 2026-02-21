@@ -54,24 +54,26 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
 
     setLoading(true);
     try {
-      let finalRecurrenceDays = recurrenceDays;
-      if (frequency === 'biweekly') {
-        finalRecurrenceDays = recurrenceDays.length === 2 ? recurrenceDays.sort((a,b) => a-b) : [15, 30];
-      } else if (frequency === 'monthly') {
-         finalRecurrenceDays = [recurrenceDays[0] || 5];
-      } else {
-        finalRecurrenceDays = [];
+      let finalRecurrenceDays = [...recurrenceDays].sort((a,b) => a-b);
+      // Ensure at least one day is selected if not one-time
+      if (frequency !== 'one-time' && finalRecurrenceDays.length === 0) {
+        finalRecurrenceDays = frequency === 'biweekly' ? [15, 30] : [5];
       }
-
-      await addIncome({
+      
+      const payload: Omit<Income, 'id'> = {
         source,
         amount: parseFloat(amount),
         frequency,
         category,
-        date: frequency === 'one-time' ? date : undefined,
         recurrenceDays: finalRecurrenceDays,
         organizationId: orgId,
-      });
+      };
+
+      if (frequency === 'one-time') {
+          payload.date = date;
+      }
+
+      await addIncome(payload);
 
       setSource('');
       setAmount('');
@@ -167,15 +169,38 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                      {frequency === 'monthly' ? 'Día del mes' : 'Días de pago'}
                   </label>
-                  <p className="text-xs text-slate-500 mb-2">
-                    {frequency === 'monthly' ? 'Ej. El día 5' : 'Ej. 15 y 30'}
+                  <p className="text-xs text-slate-500 mb-3">
+                    {frequency === 'monthly' ? 'Selecciona el día de pago' : 'Selecciona los días (ej. 15 y 30)'}
                   </p>
-                   <input
-                    type="text" // Simple text for now, could be better UI
-                    value={recurrenceDays.join(', ')}
-                    onChange={(e) => setRecurrenceDays(e.target.value.split(',').map(d => parseInt(d.trim()) || 1))}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white"
-                  />
+                  
+                  <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10">
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+                        const isSelected = recurrenceDays.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setRecurrenceDays(prev => prev.filter(d => d !== day));
+                              } else {
+                                setRecurrenceDays(prev => [...prev, day].sort((a,b) => a-b));
+                              }
+                            }}
+                            className={`
+                              w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all
+                              ${isSelected 
+                                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30 ring-1 ring-indigo-400' 
+                                : 'text-slate-400 hover:bg-white/10 hover:text-white'}
+                            `}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
             )}
           </div>

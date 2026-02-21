@@ -22,6 +22,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [frequency, setFrequency] = useState<'one-time' | 'monthly' | 'weekly'>('one-time');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [recurrenceDays, setRecurrenceDays] = useState<number[]>([new Date().getDate()]);
   const [loading, setLoading] = useState(false);
   
   const { orgId } = useAuthStore();
@@ -33,14 +35,26 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
 
     setLoading(true);
     try {
-      await addExpense({
+      let finalRecurrenceDays = [...recurrenceDays].sort((a,b) => a-b);
+      if (frequency !== 'one-time' && finalRecurrenceDays.length === 0) {
+        finalRecurrenceDays = [new Date().getDate()];
+      }
+
+      const payload: Omit<Parameters<typeof addExpense>[0], 'id'> = {
         description,
         amount: parseFloat(amount),
         category,
         frequency,
         organizationId: orgId,
-        date: new Date().toISOString()
-      });
+      };
+
+      if (frequency === 'one-time') {
+        payload.date = date;
+      } else if (frequency === 'monthly') {
+        payload.recurrenceDays = finalRecurrenceDays;
+      }
+
+      await addExpense(payload);
 
       setDescription('');
       setAmount('');
@@ -119,6 +133,56 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
                 ))}
               </div>
             </div>
+
+            {frequency === 'one-time' ? (
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Fecha</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white"
+                />
+              </div>
+            ) : frequency === 'monthly' ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                     Días de cargo
+                  </label>
+                  <p className="text-xs text-slate-500 mb-3">
+                    Selecciona los días en que se cobra este gasto
+                  </p>
+                  
+                  <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10">
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+                        const isSelected = recurrenceDays.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setRecurrenceDays(prev => prev.filter(d => d !== day));
+                              } else {
+                                setRecurrenceDays(prev => [...prev, day].sort((a,b) => a-b));
+                              }
+                            }}
+                            className={`
+                              w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all
+                              ${isSelected 
+                                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30 ring-1 ring-indigo-400' 
+                                : 'text-slate-400 hover:bg-white/10 hover:text-white'}
+                            `}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+            ) : null}
         </div>
 
         <div className="flex gap-4 pt-4 border-t border-white/10">

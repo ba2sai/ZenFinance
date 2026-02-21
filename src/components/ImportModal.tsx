@@ -53,8 +53,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
           mimeType: file.type 
         });
         
-        if (response.data.status === 'success') {
-          handleImport(response.data.transactions);
+        if (response.data.status === 'success' && response.data.data) {
+          handleImport(response.data.data.transactions);
+        } else {
+            console.error("OCR returned error:", response.data.metadata?.errorMsg);
         }
       } catch (error) {
         console.error("OCR Error:", error);
@@ -118,12 +120,22 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                 </div>
               </div>
 
-              <textarea
-                className="w-full h-32 bg-white/30 border border-white/50 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder:text-slate-400"
-                placeholder="Ejemplo: 2024-05-10 Restaurante El Sol $45.00..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
+              {loading ? (
+                <div className="w-full space-y-4 animate-pulse">
+                   <div className="h-6 bg-white/20 rounded-full w-1/3 mx-auto mb-6"></div>
+                   <div className="h-12 bg-white/20 rounded-xl w-full"></div>
+                   <div className="h-12 bg-white/20 rounded-xl w-full"></div>
+                   <div className="h-12 bg-white/20 rounded-xl w-full opacity-70"></div>
+                   <p className="text-center text-xs text-indigo-300 font-bold mt-4">Analizando tus transacciones fiscales, por favor espera...</p>
+                </div>
+              ) : (
+                <textarea
+                  className="w-full h-32 bg-white/30 border border-white/50 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder:text-slate-400"
+                  placeholder="Ejemplo: 2024-05-10 Restaurante El Sol $45.00..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                />
+              )}
             </div>
 
             <div className="mt-8 flex gap-3 justify-end">
@@ -136,7 +148,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
               <button
                 onClick={() => handleImport()}
                 disabled={loading || (!text && !loading)}
-                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-2 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100"
+                className="bg-linear-to-r from-indigo-500 to-purple-500 text-white px-8 py-2 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
                 {loading ? 'Analizando...' : 'Empezar Análisis'}

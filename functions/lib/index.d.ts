@@ -4,11 +4,30 @@ export { processUploadedFile } from "./ocrService.js";
 export declare const onUserCreated: functions.CloudFunction<import("firebase-admin/auth").UserRecord>;
 export declare const setupOrganization: import("firebase-functions/v2/https").CallableFunction<any, Promise<{
     status: string;
-    message: string;
-    orgId: any;
+    data: {
+        message: string;
+        orgId: any;
+    };
+    metadata: {
+        timestamp: string;
+        errorMsg?: never;
+    };
 } | {
     status: string;
-    orgId: string;
-    message?: never;
+    data: {
+        orgId: string;
+        message?: never;
+    };
+    metadata: {
+        timestamp: string;
+        errorMsg?: never;
+    };
+} | {
+    status: string;
+    data: null;
+    metadata: {
+        timestamp: string;
+        errorMsg: any;
+    };
 }>, unknown>;
 //# sourceMappingURL=index.d.ts.map

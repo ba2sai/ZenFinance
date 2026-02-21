@@ -92,7 +92,11 @@ export const OnboardingWizard: React.FC = () => {
       const { functions, auth } = await import('../firebase');
       const { httpsCallable } = await import('firebase/functions');
       const setupOrg = httpsCallable(functions, 'setupOrganization');
-      const result = await setupOrg();
+      const result: any = await setupOrg();
+      
+      if (result.data?.status === 'error') {
+          throw new Error(result.data.metadata?.errorMsg || "Failed to setup organization");
+      }
       console.log("Organization setup result:", result.data);
       
       // Force token refresh
@@ -119,7 +123,8 @@ export const OnboardingWizard: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-xl flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" />
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

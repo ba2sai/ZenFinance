@@ -1,4 +1,4 @@
-import { LayoutDashboard, Wallet, PiggyBank, Receipt, DollarSign, LogOut, Menu, X, Sparkles, ShieldCheck, User } from 'lucide-react';
+import { LayoutDashboard, Wallet, PiggyBank, Receipt, DollarSign, LogOut, Menu, X, Sparkles, ShieldCheck, User, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { auth } from '../firebase';
@@ -26,6 +26,7 @@ export const Sidebar = ({ activeView, onViewChange }: SidebarProps) => {
     { id: 'savings', label: 'Metas de Ahorro', icon: PiggyBank },
     { id: 'subs', label: 'Suscripciones', icon: Wallet },
     { id: 'peace', label: 'Mi Paz Mental', icon: ShieldCheck },
+    { id: 'scenario', label: 'Simulador', icon: Activity },
     { id: 'profile', label: 'Mi Perfil', icon: User },
   ];
 

@@ -1,52 +1,63 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Multi-tenant isolation for general collections
+    function isOrgMember(orgData) {
+      return request.auth != null && (
+      ('orgId' in request.auth.token && request.auth.token.orgId == orgData) ||
+      (request.auth.uid == orgData)
+      );
+    }
+
+    match /{document=**} {
+      allow read, write: if false; // default deny
+    }
+
     match /expenses/{id} {
-      allow read: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
-      allow create: if request.auth != null && request.resource.data.organizationId == request.auth.token.orgId;
-      allow update: if request.auth != null && resource.data.organizationId == request.auth.token.orgId && request.resource.data.organizationId == request.auth.token.orgId;
-      allow delete: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId) && request.resource.data.amount is number;
+      allow update: if isOrgMember(resource.data.organizationId) && isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
     }
 
     match /incomes/{id} {
-      allow read: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
-      allow create: if request.auth != null && request.resource.data.organizationId == request.auth.token.orgId;
-      allow update: if request.auth != null && resource.data.organizationId == request.auth.token.orgId && request.resource.data.organizationId == request.auth.token.orgId;
-      allow delete: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId) && request.resource.data.amount is number;
+      allow update: if isOrgMember(resource.data.organizationId) && isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
     }
 
     match /recurring_expenses/{id} {
-      allow read: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
-      allow create: if request.auth != null && request.resource.data.organizationId == request.auth.token.orgId;
-      allow update: if request.auth != null && resource.data.organizationId == request.auth.token.orgId && request.resource.data.organizationId == request.auth.token.orgId;
-      allow delete: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId) && request.resource.data.amount is number;
+      allow update: if isOrgMember(resource.data.organizationId) && isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
     }
 
     match /saving_goals/{id} {
-      allow read: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
-      allow create: if request.auth != null && request.resource.data.organizationId == request.auth.token.orgId;
-      allow update: if request.auth != null && resource.data.organizationId == request.auth.token.orgId && request.resource.data.organizationId == request.auth.token.orgId;
-      allow delete: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update: if isOrgMember(resource.data.organizationId) && isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
     }
 
     match /advice/{id} {
-      allow read: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
-      allow create: if request.auth != null && request.resource.data.organizationId == request.auth.token.orgId;
-      allow update: if request.auth != null && resource.data.organizationId == request.auth.token.orgId && request.resource.data.organizationId == request.auth.token.orgId;
-      allow delete: if request.auth != null && resource.data.organizationId == request.auth.token.orgId;
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update: if isOrgMember(resource.data.organizationId) && isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
     }
 
     match /knowledge_base/{id} {
-      allow read: if request.auth != null && 
-      (resource == null || resource.data.organizationId == request.auth.token.orgId);
-      allow write: if false; // Only via Cloud Functions
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update: if isOrgMember(resource.data.organizationId) && isOrgMember(request.resource.data.organizationId);
+      allow delete: if isOrgMember(resource.data.organizationId);
     }
 
-    // Audit logs (strictly controlled)
     match /audit_logs/{id} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if false; // Only via Functions/Admin
+      allow read: if isOrgMember(resource.data.organizationId);
+      allow create: if isOrgMember(request.resource.data.organizationId);
+      allow update, delete: if false; 
     }
   }
 }

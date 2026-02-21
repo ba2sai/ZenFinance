@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { useFinanceStore } from '../store/useFinanceStore';
-// import { useAuthStore } from '../store/useAuthStore'; // Removed unused
+import { useAuthStore } from '../store/useAuthStore';
 import { IncomeForm } from './IncomeForm';
 import type { Income } from '../store/useFinanceStore';
 
 export const IncomeView: React.FC = () => {
   const incomes = useFinanceStore(state => state.incomes) || [];
   const removeIncome = useFinanceStore(state => state.removeIncome);
-  // const { orgId } = useAuthStore(); // Removed unused
+  const isHistoryLoaded = useFinanceStore(state => state.isHistoryLoaded);
+  const subscribeToFinancials = useFinanceStore(state => state.subscribeToFinancials);
+  const { orgId } = useAuthStore(); 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState<Income | undefined>(undefined);
 
@@ -114,6 +116,17 @@ export const IncomeView: React.FC = () => {
            </div>
         )}
       </div>
+
+      {!isHistoryLoaded && orgId && incomes.length > 0 && (
+         <div className="flex justify-center mt-8">
+            <button 
+              onClick={() => subscribeToFinancials(orgId, { loadAllHistory: true })}
+              className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full font-medium text-sm transition-colors"
+            >
+              Cargar historial completo
+            </button>
+         </div>
+      )}
 
       {isFormOpen && (
         <IncomeForm 

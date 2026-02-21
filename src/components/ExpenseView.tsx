@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinanceStore } from '../store/useFinanceStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { ExpenseForm } from './ExpenseForm';
 import { CreditCard, Plus, X, Trash2, Calendar, Repeat, ShoppingCart, Car, Home, Film, HeartPulse, GraduationCap, Smartphone, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +20,9 @@ const CATEGORY_CONFIG: Record<string, { label: string, color: string, icon: Reac
 export const ExpenseView: React.FC = () => {
   const expenses = useFinanceStore(state => state.expenses) || [];
   const removeExpense = useFinanceStore(state => state.removeExpense);
+  const isHistoryLoaded = useFinanceStore(state => state.isHistoryLoaded);
+  const subscribeToFinancials = useFinanceStore(state => state.subscribeToFinancials);
+  const { orgId } = useAuthStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Chart Logic
@@ -144,10 +148,21 @@ export const ExpenseView: React.FC = () => {
                          );
                       })
                    )}
-                </div>
-             )}
-           </AnimatePresence>
-        </div>
+                 </div>
+              )}
+            </AnimatePresence>
+
+            {!isHistoryLoaded && orgId && expenses.length > 0 && !isFormOpen && (
+               <div className="flex justify-center mt-6">
+                  <button 
+                    onClick={() => subscribeToFinancials(orgId, { loadAllHistory: true })}
+                    className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full font-medium text-sm transition-colors"
+                  >
+                    Cargar historial completo
+                  </button>
+               </div>
+            )}
+         </div>
 
         {/* Right Column: Chart */}
         <div className="space-y-6">

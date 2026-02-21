@@ -6,9 +6,11 @@ import { auth } from '../firebase';
 interface AuthState {
   user: User | null;
   orgId: string | null;
+  googleAccessToken: string | null;
   loading: boolean;
   isOnboardingComplete: boolean;
-  setUser: (user: User | null, orgId: string | null, isOnboardingComplete: boolean) => void;
+  setUser: (user: User | null, orgId: string | null, isOnboardingComplete: boolean, googleAccessToken?: string | null) => void;
+  setGoogleAccessToken: (token: string | null) => void;
   setOnboardingComplete: (status: boolean) => void;
   logout: () => Promise<void>;
 }
@@ -16,9 +18,17 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   orgId: null,
+  googleAccessToken: null,
   loading: true,
   isOnboardingComplete: false,
-  setUser: (user, orgId, isOnboardingComplete) => set({ user, orgId, loading: false, isOnboardingComplete }),
+  setUser: (user, orgId, isOnboardingComplete, googleAccessToken = null) => set((state) => ({ 
+    user, 
+    orgId, 
+    loading: false, 
+    isOnboardingComplete,
+    googleAccessToken: googleAccessToken || state.googleAccessToken 
+  })),
+  setGoogleAccessToken: (googleAccessToken) => set({ googleAccessToken }),
   setOnboardingComplete: (status) => {
     const { user } = useAuthStore.getState();
     if (user) {
@@ -28,7 +38,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   logout: async () => {
     await auth.signOut();
-    set({ user: null, orgId: null, isOnboardingComplete: false });
+    set({ user: null, orgId: null, isOnboardingComplete: false, googleAccessToken: null });
   },
 }));
 

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Leaf, ArrowRight } from 'lucide-react';
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import { useAuthStore } from '../store/useAuthStore';
 
 // Helper component for the Logo
 const ZenLogo = ({ size = "normal" }: { size?: "normal" | "large" }) => (
@@ -29,7 +30,13 @@ export const Login: React.FC = () => {
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      provider.addScope('https://www.googleapis.com/auth/calendar.events');
+      const result = await signInWithPopup(auth, provider);
+      
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        useAuthStore.getState().setGoogleAccessToken(credential.accessToken);
+      }
     } catch (err: any) {
       console.error(err);
       setError('Error al iniciar sesión con Google.');
