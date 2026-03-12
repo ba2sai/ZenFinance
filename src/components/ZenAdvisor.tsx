@@ -87,8 +87,13 @@ export const ZenAdvisor: React.FC<ZenAdvisorProps> = ({ peaceFactor, savingsRate
 
   const handleRate = async (score: number) => {
     if (!advice) return;
-    setRating(score);
-    // In a real app, update the document in Firestore
+    setRating(score); // optimistic update
+    try {
+      const feedbackFn = httpsCallable(functions, 'handleAdviceFeedback');
+      await feedbackFn({ adviceId: advice.id, rating: score, content: advice.content });
+    } catch (error) {
+      console.error("Error saving feedback:", error);
+    }
   };
 
   if (compact) {

@@ -226,7 +226,7 @@ export const ProfileView: React.FC = () => {
            onClick={handleLogout}
            className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-xl transition-colors border border-rose-500/20"
         >
-           <LogOut size={18} /> Closing Session
+           <LogOut size={18} /> Cerrar Sesión
         </button>
       </div>
 
@@ -436,7 +436,14 @@ export const ProfileView: React.FC = () => {
               </div>
 
                <div className="pt-4 border-t border-slate-800">
-                 <button className="w-full py-2 text-sm text-slate-500 hover:text-rose-400 transition-colors">
+                 <button
+                   className="w-full py-2 text-sm text-slate-500 hover:text-rose-400 transition-colors"
+                   onClick={() => {
+                     if (window.confirm('¿Estás seguro? Esta acción eliminará todos tus datos financieros permanentemente.')) {
+                       clearFinanceData();
+                     }
+                   }}
+                 >
                     Borrar todos mis datos
                  </button>
                </div>

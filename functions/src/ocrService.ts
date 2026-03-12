@@ -1,10 +1,13 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
-export const processUploadedFile = onCall(async (request) => {
+export const processUploadedFile = onCall({ secrets: [geminiApiKey] }, async (request) => {
+  const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "User must be authenticated.");
 

@@ -47,8 +47,7 @@ function App() {
     <div className="flex min-h-screen font-sans selection:bg-indigo-500/30 text-slate-100">
       <Toaster />
       <AnimatePresence>
-        {/* Helper check to avoid type errors if showOnboarding undefined */}
-        {(auth as any).showOnboarding && <OnboardingWizard />}
+        {!auth.isOnboardingComplete && <OnboardingWizard />}
         {isImportOpen && <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />}
       </AnimatePresence>
 

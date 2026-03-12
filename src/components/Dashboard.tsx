@@ -4,6 +4,7 @@ import { TrendingUp, Calendar, ChevronLeft, ChevronRight, Target } from 'lucide-
 import { useFinanceStore } from '../store/useFinanceStore';
 import { ZenAdvisor } from './ZenAdvisor';
 import { MetricTooltip } from './MetricTooltip';
+import { getMonthlyAmount } from '../utils/financeUtils';
 
 
 
@@ -80,12 +81,14 @@ export const Dashboard: React.FC = () => {
    });
 
    const totalMonthlyIncome = monthlyIncomes.reduce((acc, curr) => {
-      let amount = curr.amount;
-      if (curr.frequency === 'biweekly') amount *= 2;
+      const amount = curr.frequency === 'one-time' ? curr.amount : getMonthlyAmount(curr.amount, curr.frequency);
       return acc + amount;
    }, 0);
 
-   const totalMonthlyExpenses = monthlyExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+   const totalMonthlyExpenses = monthlyExpenses.reduce((acc, curr) => {
+      const amount = curr.frequency === 'one-time' ? curr.amount : getMonthlyAmount(curr.amount, curr.frequency);
+      return acc + amount;
+   }, 0);
    const freeBudget = totalMonthlyIncome - totalMonthlyExpenses;
    const peaceFactor = totalMonthlyIncome > 0 ? Math.max(0, Math.min(100, Math.round((freeBudget / totalMonthlyIncome) * 100))) : 0;
 

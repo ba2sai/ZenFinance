@@ -26,7 +26,6 @@ export interface Expense {
   subscriptionStatus?: 'active' | 'verified' | 'cancelled';
 }
 
-export const Expense = {};
 
 export interface RecurringExpense {
   id: string;
@@ -41,7 +40,7 @@ export interface Income {
   id: string;
   source: string;
   amount: number;
-  frequency: 'monthly' | 'biweekly' | 'one-time';
+  frequency: 'monthly' | 'biweekly' | 'weekly' | 'yearly' | 'one-time';
   category: string;
   date?: string; 
   recurrenceDays?: number[]; 

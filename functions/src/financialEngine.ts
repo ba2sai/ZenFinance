@@ -1,11 +1,12 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
-export const analyzeFinancialFlow = onCall(async (request) => {
+
+export const analyzeFinancialFlow = onCall({ secrets: [geminiApiKey] }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "User must be authenticated.");
   
@@ -46,6 +47,7 @@ export const analyzeFinancialFlow = onCall(async (request) => {
   `;
 
   try {
+    const model = new GoogleGenerativeAI(geminiApiKey.value()).getGenerativeModel({ model: "gemini-2.0-flash-lite" });
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     const jsonMatch = responseText.match(/\{.*\}/s);

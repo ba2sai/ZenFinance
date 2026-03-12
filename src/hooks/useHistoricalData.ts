@@ -1,5 +1,6 @@
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useMemo } from 'react';
+import { getMonthlyAmount } from '../utils/financeUtils';
 
 export interface MonthlyData {
   month: string; // "Jan 2024"
@@ -42,7 +43,7 @@ export const useHistoricalData = () => {
              months[key].income += inc.amount;
            }
         } else {
-           months[key].income += inc.amount; // Monthly/Biweekly estimated as monthly total
+           months[key].income += getMonthlyAmount(inc.amount, inc.frequency);
         }
       });
     });
@@ -58,7 +59,7 @@ export const useHistoricalData = () => {
              months[key].expenses += exp.amount;
            }
         } else {
-           months[key].expenses += exp.amount;
+           months[key].expenses += getMonthlyAmount(exp.amount, exp.frequency);
         }
       });
     });
