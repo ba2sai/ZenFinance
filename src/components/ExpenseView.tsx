@@ -23,7 +23,7 @@ export const ExpenseView: React.FC = () => {
   const removeExpense = useFinanceStore(state => state.removeExpense);
   const isHistoryLoaded = useFinanceStore(state => state.isHistoryLoaded);
   const subscribeToFinancials = useFinanceStore(state => state.subscribeToFinancials);
-  const { orgId } = useAuthStore();
+  const { user } = useAuthStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Dynamically merge custom categories so they have a distinct color in the chart
@@ -201,10 +201,10 @@ export const ExpenseView: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {!isHistoryLoaded && orgId && expenses.length > 0 && !isFormOpen && (
+            {!isHistoryLoaded && user?.uid && expenses.length > 0 && !isFormOpen && (
                <div className="flex justify-center mt-6">
                   <button 
-                    onClick={() => subscribeToFinancials(orgId, { loadAllHistory: true })}
+                    onClick={() => subscribeToFinancials(user.uid, { loadAllHistory: true })}
                     className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full font-medium text-sm transition-colors"
                   >
                     Cargar historial completo

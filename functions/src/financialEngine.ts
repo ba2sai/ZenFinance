@@ -9,7 +9,6 @@ export const analyzeFinancialFlow = onCall(async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError("unauthenticated", "User must be authenticated.");
   
-  const { orgId } = auth.token;
   const { expenses, income, history, trends, context } = data;
 
   const prompt = `
@@ -54,7 +53,6 @@ export const analyzeFinancialFlow = onCall(async (request) => {
 
     // Save advice to Firestore
     await getFirestore().collection("advice").add({
-      organizationId: orgId,
       userId: auth.uid,
       content: analysis,
       timestamp: FieldValue.serverTimestamp(),
@@ -84,7 +82,6 @@ export const handleAdviceFeedback = onCall(async (request) => {
   if (!auth) throw new HttpsError("unauthenticated", "User must be authenticated.");
 
   const { adviceId, rating, content } = data;
-  const { orgId } = auth.token;
 
   try {
     // Update advice rating
@@ -93,7 +90,7 @@ export const handleAdviceFeedback = onCall(async (request) => {
     // If rating is 4-5 stars, add to knowledge base
     if (rating >= 4) {
       await getFirestore().collection("knowledge_base").add({
-        organizationId: orgId,
+        userId: auth.uid,
         content: content,
         type: "insight",
         rating: rating,

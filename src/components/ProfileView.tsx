@@ -9,7 +9,7 @@ import { useGamification } from '../hooks/useGamification';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const ProfileView: React.FC = () => {
-  const { user, logout, googleAccessToken, orgId } = useAuthStore();
+  const { user, logout, googleAccessToken } = useAuthStore();
   const { clearFinanceData, incomes, recurringExpenses, savingsGoals, addSavingGoal, removeSavingGoal, language, currency, setLanguage, setCurrency, expenses, customCategories, addCustomCategory, removeCustomCategory } = useFinanceStore();
   const { currentBelt, badges, streak } = useGamification();
   
@@ -28,13 +28,14 @@ export const ProfileView: React.FC = () => {
   const [catLoading, setCatLoading] = useState(false);
 
   const handleAddCategory = async () => {
-     if (!newCatName.trim() || !orgId) return;
+     const userId = user?.uid;
+     if (!newCatName.trim() || !userId) return;
      setCatLoading(true);
      try {
        await addCustomCategory({
          name: newCatName.trim(),
          type: newCatType,
-         organizationId: orgId
+         userId: userId
        });
        setNewCatName('');
      } catch (err) {
@@ -126,7 +127,8 @@ export const ProfileView: React.FC = () => {
   const isAnnualPlanEnabled = !!annualSavingsPlan;
 
   const handleToggleAnnualPlan = async () => {
-    if (!orgId) return;
+    const userId = user?.uid;
+    if (!userId) return;
     try {
        if (isAnnualPlanEnabled && annualSavingsPlan) {
          await removeSavingGoal(annualSavingsPlan.id);
@@ -136,7 +138,7 @@ export const ProfileView: React.FC = () => {
            target: 10000, 
            current: 0,
            icon: '🎯',
-           organizationId: orgId
+           userId: userId
          });
        }
     } catch (error) {

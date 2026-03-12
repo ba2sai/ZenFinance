@@ -7,7 +7,6 @@ export const analyzeFinancialFlow = onCall(async (request) => {
     const { auth, data } = request;
     if (!auth)
         throw new HttpsError("unauthenticated", "User must be authenticated.");
-    const { orgId } = auth.token;
     const { expenses, income, history, trends, context } = data;
     const prompt = `
     Eres el Agente 6 de ZenFinance: Especialista Senior en Finanzas y Psicología del Dinero.
@@ -49,7 +48,6 @@ export const analyzeFinancialFlow = onCall(async (request) => {
         const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { message: responseText };
         // Save advice to Firestore
         await getFirestore().collection("advice").add({
-            organizationId: orgId,
             userId: auth.uid,
             content: analysis,
             timestamp: FieldValue.serverTimestamp(),
@@ -78,14 +76,13 @@ export const handleAdviceFeedback = onCall(async (request) => {
     if (!auth)
         throw new HttpsError("unauthenticated", "User must be authenticated.");
     const { adviceId, rating, content } = data;
-    const { orgId } = auth.token;
     try {
         // Update advice rating
         await getFirestore().collection("advice").doc(adviceId).update({ rating });
         // If rating is 4-5 stars, add to knowledge base
         if (rating >= 4) {
             await getFirestore().collection("knowledge_base").add({
-                organizationId: orgId,
+                userId: auth.uid,
                 content: content,
                 type: "insight",
                 rating: rating,

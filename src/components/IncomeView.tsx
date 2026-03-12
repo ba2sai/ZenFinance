@@ -10,7 +10,7 @@ export const IncomeView: React.FC = () => {
   const removeIncome = useFinanceStore(state => state.removeIncome);
   const isHistoryLoaded = useFinanceStore(state => state.isHistoryLoaded);
   const subscribeToFinancials = useFinanceStore(state => state.subscribeToFinancials);
-  const { orgId } = useAuthStore(); 
+  const { user } = useAuthStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState<Income | undefined>(undefined);
 
@@ -117,10 +117,10 @@ export const IncomeView: React.FC = () => {
         )}
       </div>
 
-      {!isHistoryLoaded && orgId && incomes.length > 0 && (
+      {!isHistoryLoaded && user?.uid && incomes.length > 0 && (
          <div className="flex justify-center mt-8">
             <button 
-              onClick={() => subscribeToFinancials(orgId, { loadAllHistory: true })}
+              onClick={() => subscribeToFinancials(user.uid, { loadAllHistory: true })}
               className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full font-medium text-sm transition-colors"
             >
               Cargar historial completo

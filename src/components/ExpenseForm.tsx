@@ -26,7 +26,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
   const [recurrenceDays, setRecurrenceDays] = useState<number[]>([new Date().getDate()]);
   const [loading, setLoading] = useState(false);
   
-  const { orgId } = useAuthStore();
+  const { user } = useAuthStore();
+  const userId = user?.uid;
   const addExpense = useFinanceStore(state => state.addExpense);
   const customExpenseCategories = useFinanceStore(state => state.customCategories || []).filter(c => c.type === 'expense');
   
@@ -41,7 +42,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !amount || !orgId) return;
+    if (!description || !amount || !userId) return;
 
     setLoading(true);
     try {
@@ -55,7 +56,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onCancel }) => {
         amount: parseFloat(amount),
         category,
         frequency,
-        organizationId: orgId,
+        userId,
       };
 
       if (frequency === 'one-time') {

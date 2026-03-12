@@ -16,18 +16,19 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { orgId } = useAuthStore();
+  const { user } = useAuthStore();
+  const userId = user?.uid;
   const { setExpenses } = useFinanceStore();
 
   const handleImport = async (dataToProcess?: any[]) => {
-    if ((!text && !dataToProcess) || !orgId) return;
+    if ((!text && !dataToProcess) || !userId) return;
     setLoading(true);
     
     try {
       const result = dataToProcess || await categorizeExpenses(text);
       
       if (result) {
-        const enrichedExpenses = result.map((e: any) => ({ ...e, organizationId: orgId }));
+        const enrichedExpenses = result.map((e: any) => ({ ...e, userId: userId }));
         setExpenses(enrichedExpenses);
         onClose();
       }
@@ -40,7 +41,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !orgId) return;
+    if (!file || !userId) return;
 
     setLoading(true);
     const reader = new FileReader();

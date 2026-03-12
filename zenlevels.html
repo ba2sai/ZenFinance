@@ -1,0 +1,90 @@
+import React, { useState } from 'react';
+import { Target, Shield, Flame, Info, CheckCircle2 } from 'lucide-react';
+
+const App = () => {
+const [selected, setSelected] = useState('60/30/10');
+const income = 3000; // Ejemplo de ingreso neto
+
+const models = [
+{
+id: '50/30/20',
+name: 'Clásico',
+icon:
+<Shield className="w-6 h-6 text-blue-500" />,
+desc: 'Ideal para estabilidad y balance.',
+distribution: { needs: 50, wants: 30, financial: 20 },
+color: 'bg-blue-50 border-blue-200 text-blue-700'
+},
+{
+id: '60/30/10',
+name: 'Realista',
+icon:
+<Target className="w-6 h-6 text-emerald-500" />,
+desc: 'Ajustado al costo de vida actual.',
+distribution: { needs: 60, wants: 30, financial: 10 },
+color: 'bg-emerald-50 border-emerald-200 text-emerald-700'
+},
+{
+id: '75/15/10',
+name: 'Agresivo',
+icon:
+<Flame className="w-6 h-6 text-orange-500" />,
+desc: 'Enfoque total en riqueza y deuda.',
+distribution: { spend: 75, invest: 15, save: 10 },
+color: 'bg-orange-50 border-orange-200 text-orange-700'
+}
+];
+
+return (
+<div className="max-w-md mx-auto p-6 bg-white rounded-3xl shadow-lg font-sans">
+    <h2 className="text-2xl font-bold text-slate-800 mb-2">Configura tu Nivel Zen</h2>
+    <p className="text-slate-500 text-sm mb-6 underline">Basado en tus objetivos de libertad.</p>
+
+    <div className="space-y-4">
+        {models.map((model) => (
+        <button key={model.id} onClick={()=> setSelected(model.id)}
+            className={`w-full p-4 rounded-2xl border-2 transition-all flex items-start gap-4 text-left ${
+            selected === model.id ? model.color : 'border-slate-100 bg-slate-50 opacity-60'
+            }`}
+            >
+            <div className="mt-1">{model.icon}</div>
+            <div className="flex-1">
+                <div className="flex justify-between items-center">
+                    <span className="font-bold text-lg">{model.name}</span>
+                    <span className="text-xs font-mono font-bold uppercase">{model.id}</span>
+                </div>
+                <p className="text-xs opacity-80 mt-1">{model.desc}</p>
+            </div>
+            {selected === model.id &&
+            <CheckCircle2 className="w-5 h-5 mt-1" />}
+        </button>
+        ))}
+    </div>
+
+    {/* Vista previa de los números */}
+    <div className="mt-8 p-5 bg-slate-900 rounded-2xl text-white">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+            <Info className="w-4 h-4" /> Distribución mensual ($3,000)
+        </h3>
+        <div className="space-y-3">
+            {Object.entries(models.find(m => m.id === selected).distribution).map(([key, val]) => (
+            <div key={key} className="flex justify-between items-center">
+                <span className="capitalize text-sm text-slate-300">
+                    {key === 'needs' ? 'Necesidades' : key === 'wants' ? 'Deseos' : key === 'financial' ?
+                    'Ahorro/Libertad' : key === 'spend' ? 'Gasto Total' : key === 'invest' ? 'Inversión' : 'Ahorro'}
+                </span>
+                <span className="font-mono font-bold">${(income * (val / 100)).toLocaleString()}</span>
+            </div>
+            ))}
+        </div>
+    </div>
+
+    <button
+        className="w-full mt-6 py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-colors">
+        Activar este Plan
+    </button>
+</div>
+);
+};
+
+export default App;

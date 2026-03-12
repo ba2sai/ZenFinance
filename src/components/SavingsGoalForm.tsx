@@ -22,7 +22,8 @@ interface SavingsGoalFormProps {
 }
 
 const SavingsGoalForm: React.FC<SavingsGoalFormProps> = ({ onCancel }) => {
-  const { orgId } = useAuthStore();
+  const { user } = useAuthStore();
+  const userId = user?.uid;
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -33,7 +34,7 @@ const SavingsGoalForm: React.FC<SavingsGoalFormProps> = ({ onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !target || !orgId) return;
+    if (!name || !target || !userId) return;
 
     setLoading(true);
     try {
@@ -43,7 +44,7 @@ const SavingsGoalForm: React.FC<SavingsGoalFormProps> = ({ onCancel }) => {
         current: 0,
         deadline,
         icon: selectedIcon,
-        organizationId: orgId,
+        userId: userId,
       });
       onCancel();
     } catch (error) {

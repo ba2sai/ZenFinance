@@ -17,17 +17,17 @@ function generateAuditLog(tableName: string) {
             action = "DELETE";
         }
 
-        // Get Organization ID (Fallback to examining data if not directly at root level depending on your schema)
-        const orgId = afterData?.organizationId || beforeData?.organizationId;
+        // Get User ID (Fallback to examining data if not directly at root level depending on your schema)
+        const userId = afterData?.userId || beforeData?.userId;
 
-        if (!orgId) {
-            console.warn(`[AuditLog] No organizationId found for ${tableName}/${event.params.docId}`);
+        if (!userId) {
+            console.warn(`[AuditLog] No userId found for ${tableName}/${event.params.docId}`);
             return;
         }
 
         try {
             await getFirestore().collection("audit_logs").add({
-                organizationId: orgId,
+                userId: userId,
                 collection: tableName,
                 documentId: event.params.docId,
                 action: action,

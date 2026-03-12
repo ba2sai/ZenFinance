@@ -20,7 +20,8 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
   const [recurrenceDays, setRecurrenceDays] = useState<number[]>([5]); 
   const [loading, setLoading] = useState(false);
   
-  const { orgId } = useAuthStore();
+  const { user } = useAuthStore();
+  const userId = user?.uid;
   const addIncome = useFinanceStore(state => state.addIncome);
   const customIncomeCategories = useFinanceStore(state => state.customCategories || []).filter(c => c.type === 'income');
   
@@ -62,7 +63,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!source || !amount || !orgId) return;
+    if (!source || !amount || !userId) return;
 
     setLoading(true);
     try {
@@ -78,7 +79,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({ isOpen, onClose, onCance
         frequency,
         category,
         recurrenceDays: finalRecurrenceDays,
-        organizationId: orgId,
+        userId,
       };
 
       if (frequency === 'one-time') {

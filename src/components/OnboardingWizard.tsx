@@ -31,24 +31,21 @@ export const OnboardingWizard: React.FC = () => {
     if (step === 3) {
       setIsLoading(true);
       try {
-        // 1. Force token refresh to ensure custom claims (orgId) are present
         const { auth } = await import('../firebase');
-        if (auth.currentUser) {
-           await auth.currentUser.getIdToken(true);
+        const user = auth.currentUser;
+        if (!user) {
+            throw new Error("No user found");
         }
-        
-        // 2. Get the latest orgId from the store (it should update after refresh if we were listening, but let's be safe)
-        const token = await auth.currentUser?.getIdTokenResult();
-        const currentOrgId = (token?.claims.orgId as string) || 'default-org';
+        const userId = user.uid;
 
         const incomeValue = parseFloat(income);
         if (!isNaN(incomeValue)) {
-          console.log("Saving income...", { currentOrgId });
+          console.log("Saving income...");
           await addDoc(collection(db, 'incomes'), {
             source: 'Ingreso Principal',
             amount: incomeValue,
             frequency,
-            organizationId: currentOrgId,
+            userId,
             timestamp: serverTimestamp()
           });
         }
@@ -62,7 +59,7 @@ export const OnboardingWizard: React.FC = () => {
               amount: parseFloat(amounts[id] || '0'),
               dueDate: dueDates[id] || 1,
               category: suggested.category,
-              organizationId: currentOrgId,
+              userId,
               timestamp: serverTimestamp()
             });
           }

@@ -25,11 +25,11 @@ function App() {
   const [isImportOpen, setIsImportOpen] = useState(false);
 
   useEffect(() => {
-    if (auth.orgId) {
-      const unsubs = finance.subscribeToFinancials(auth.orgId);
+    if (auth.user?.uid) {
+      const unsubs = finance.subscribeToFinancials(auth.user.uid);
       return () => unsubs.forEach(u => u());
     }
-  }, [auth.orgId, finance.subscribeToFinancials]);
+  }, [auth.user?.uid, finance.subscribeToFinancials]);
 
   if (auth.loading) {
     return (

@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { TrendingUp, Calendar, ChevronLeft, ChevronRight, Target } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+
 import { useFinanceStore } from '../store/useFinanceStore';
 import { ZenAdvisor } from './ZenAdvisor';
+import { MetricTooltip } from './MetricTooltip';
+
 
 
 // --- Rounded Stats Card ---
@@ -135,9 +137,17 @@ export const Dashboard: React.FC = () => {
             {/* 3. Factor de Paz (Donut) */}
             <div className="glass-card p-6 flex items-center justify-between rounded-3xl relative overflow-hidden group hover:bg-slate-800/80 transition-colors">
                <div>
-                  <p className="text-slate-400 text-sm font-medium mb-1">Factor de Paz</p>
+                  <p className="text-slate-400 text-sm font-medium mb-1 flex items-center">
+                     Factor de Paz
+                     <MetricTooltip
+                        title="Factor de Paz"
+                        description="Qué porcentaje de tus ingresos de este mes quedó libre después de cubrir todos tus gastos. A mayor porcentaje, más margen financiero tienes."
+                        formula="(Ingresos - Gastos del mes) ÷ Ingresos × 100"
+                        example="Ej: si ganas $2,000 y gastas $780, tu Factor de Paz es 61%."
+                     />
+                  </p>
                   <p className="text-4xl font-black text-white">{peaceFactor}%</p>
-                  <p className="text-emerald-400 text-xs font-bold mt-2">Excelente estado</p>
+                  <p className="text-emerald-400 text-xs font-bold mt-2">Flujo libre este mes</p>
                </div>
                <div className="relative w-24 h-24 flex items-center justify-center">
                   <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -302,13 +312,15 @@ export const Dashboard: React.FC = () => {
 
                <div className="space-y-6">
                   {finance.savingsGoals.slice(0, 3).map(goal => {
-                     const progress = (goal.current / goal.target) * 100;
+                     const current = goal.current || 0;
+                     const target = goal.target || 0;
+                     const progress = target > 0 ? (current / target) * 100 : 0;
                      return (
                         <div key={goal.id}>
                            <div className="flex justify-between items-end mb-2">
                               <p className="font-bold text-white text-sm">{goal.name}</p>
                               <p className="text-xs text-slate-400 font-medium">
-                                 ${goal.current.toLocaleString()} / <span className="text-slate-600">${goal.target.toLocaleString()}</span>
+                                 ${current.toLocaleString()} / <span className="text-slate-600">${target.toLocaleString()}</span>
                               </p>
                            </div>
                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">

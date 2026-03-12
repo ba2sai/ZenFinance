@@ -19,7 +19,7 @@ export interface Expense {
   category: string;
   description: string;
   date?: string; 
-  organizationId: string;
+  userId: string;
   frequency: 'one-time' | 'monthly' | 'biweekly' | 'weekly' | 'yearly';
   recurrenceDays?: number[];
   nextDueDate?: string;
@@ -34,7 +34,7 @@ export interface RecurringExpense {
   amount: number;
   dueDate: number; // Day of month
   category: string;
-  organizationId: string;
+  userId: string;
 }
 
 export interface Income {
@@ -45,7 +45,7 @@ export interface Income {
   category: string;
   date?: string; 
   recurrenceDays?: number[]; 
-  organizationId: string;
+  userId: string;
 }
 
 export interface SavingGoal {
@@ -55,14 +55,14 @@ export interface SavingGoal {
   current: number;
   deadline?: string;
   icon?: string;
-  organizationId: string;
+  userId: string;
 }
 
 export interface CustomCategory {
   id: string;
   name: string;
   type: 'income' | 'expense';
-  organizationId: string;
+  userId: string;
 }
 
 interface FinanceState {
@@ -102,7 +102,7 @@ interface FinanceState {
   setRecurringExpenses: (expenses: RecurringExpense[]) => void;
   setSavingsGoals: (savingsGoals: SavingGoal[]) => void;
   setCustomCategories: (categories: CustomCategory[]) => void;
-  subscribeToFinancials: (orgId: string, options?: { loadAllHistory?: boolean }) => Unsubscribe[];
+  subscribeToFinancials: (userId: string, options?: { loadAllHistory?: boolean }) => Unsubscribe[];
   clearFinanceData: () => void;
   clearPermissionError: () => void;
 }
@@ -231,9 +231,9 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       }
   },
 
-  subscribeToFinancials: (orgId: string, options = { loadAllHistory: false }) => {
-    if (!orgId || orgId === 'default-org') {
-      console.warn("Invalid orgId for subscription:", orgId);
+  subscribeToFinancials: (userId: string, options = { loadAllHistory: false }) => {
+    if (!userId) {
+      console.warn("Invalid userId for subscription:", userId);
       return [];
     }
     
@@ -259,7 +259,7 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     };
 
     collectionsConfig.forEach(col => {
-      let q = query(collection(db, col.name), where('organizationId', '==', orgId));
+      let q = query(collection(db, col.name), where('userId', '==', userId));
       
       if (!options.loadAllHistory && col.canPaginate) {
          // Apply limit for regular loading to optimize reads

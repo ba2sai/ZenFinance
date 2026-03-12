@@ -27,8 +27,8 @@ interface ZenAdvisorProps {
 }
 
 export const ZenAdvisor: React.FC<ZenAdvisorProps> = ({ peaceFactor, savingsRate, hasEmergencyFund, compact = false }) => {
-  const { orgId: authOrgId } = useAuthStore();
-  const orgId = authOrgId; // Alias for compatibility with existing code
+  const { user } = useAuthStore();
+  const userId = user?.uid;
   const { expenses, incomes } = useFinanceStore();
   const [advice, setAdvice] = useState<Advice | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,9 +40,9 @@ export const ZenAdvisor: React.FC<ZenAdvisorProps> = ({ peaceFactor, savingsRate
   }, [peaceFactor, savingsRate, hasEmergencyFund]);
 
   useEffect(() => {
-    if (!orgId) return;
+    if (!userId) return;
 
-    const q = query(collection(db, 'advice'), where('organizationId', '==', orgId), orderBy('timestamp', 'desc'), limit(1));
+    const q = query(collection(db, 'advice'), where('userId', '==', userId), orderBy('timestamp', 'desc'), limit(1));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const doc = snapshot.docs[0];
@@ -50,7 +50,7 @@ export const ZenAdvisor: React.FC<ZenAdvisorProps> = ({ peaceFactor, savingsRate
       }
     });
     return () => unsubscribe();
-  }, [orgId]);
+  }, [userId]);
 
   const { history, trends } = useHistoricalData(); // Initialize hook
 

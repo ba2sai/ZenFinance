@@ -25,8 +25,8 @@ export const SavingsView: React.FC = () => {
   const updateSavingGoal = useFinanceStore(state => state.updateSavingGoal);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const totalSaved = savingsGoals.reduce((acc: number, curr: any) => acc + curr.current, 0);
-  const totalTarget = savingsGoals.reduce((acc: number, curr: any) => acc + curr.target, 0);
+  const totalSaved = savingsGoals.reduce((acc: number, curr: any) => acc + (curr.current || 0), 0);
+  const totalTarget = savingsGoals.reduce((acc: number, curr: any) => acc + (curr.target || 0), 0);
   const totalProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
 
   const handleContribute = async (goalId: string) => {
@@ -139,9 +139,11 @@ export const SavingsView: React.FC = () => {
                         </div>
                      ) : (
                         savingsGoals.map((goal) => {
-                           const progress = Math.min(100, (goal.current / goal.target) * 100);
+                           const current = goal.current || 0;
+                           const target = goal.target || 0;
+                           const progress = target > 0 ? Math.min(100, (current / target) * 100) : 0;
                            const Icon = GOAL_ICONS[goal.icon || 'piggy'] || PiggyBank;
-                           const isCompleted = progress >= 100;
+                           const isCompleted = target > 0 && progress >= 100;
 
                            return (
                              <motion.div
@@ -159,7 +161,7 @@ export const SavingsView: React.FC = () => {
                                      <div>
                                         <h4 className="font-bold text-white leading-tight">{goal.name}</h4>
                                         <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">
-                                           Meta: ${goal.target.toLocaleString()}
+                                           Meta: ${target.toLocaleString()}
                                         </p>
                                      </div>
                                   </div>
@@ -174,7 +176,7 @@ export const SavingsView: React.FC = () => {
                                <div className="space-y-2">
                                   <div className="flex justify-between text-sm font-bold">
                                      <span className={isCompleted ? 'text-emerald-400' : 'text-slate-300'}>
-                                        ${goal.current.toLocaleString()}
+                                        ${current.toLocaleString()}
                                      </span>
                                      <span className={isCompleted ? 'text-emerald-400' : 'text-slate-500'}>
                                         {Math.round(progress)}%
