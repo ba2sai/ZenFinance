@@ -8,12 +8,14 @@ initializeApp();
 
 export { analyzeFinancialFlow, handleAdviceFeedback } from "./financialEngine.js";
 export { processUploadedFile } from "./ocrService.js";
+export { auditExpenses, auditIncomes, auditCategories, auditSavingGoals, auditRecurring } from "./auditTriggers.js";
+
 
 // Trigger: When a new user is created in Firebase Auth
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const db = getFirestore();
   const auth = getAuth();
-  
+
   // 1. Create a new Organization for this user
   const orgRef = db.collection("organizations").doc();
   const orgId = orgRef.id;
@@ -29,7 +31,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     });
 
     // 2. Set Custom User Claims on the Auth user record
-    await auth.setCustomUserClaims(user.uid, { 
+    await auth.setCustomUserClaims(user.uid, {
       orgId: orgId,
       role: "ADMIN"
     });
@@ -54,17 +56,17 @@ export const setupOrganization = onCall(async (request) => {
   if (!auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be loggeed in.");
   }
-  
+
   const db = getFirestore();
   const adminAuth = getAuth();
   const uid = auth.uid;
 
   // Check if user already has orgId
   if (auth.token.orgId) {
-    return { 
-        status: "success", 
-        data: { message: "User already has an organization", orgId: auth.token.orgId },
-        metadata: { timestamp: new Date().toISOString() }
+    return {
+      status: "success",
+      data: { message: "User already has an organization", orgId: auth.token.orgId },
+      metadata: { timestamp: new Date().toISOString() }
     };
   }
 
@@ -81,7 +83,7 @@ export const setupOrganization = onCall(async (request) => {
       }
     });
 
-    await adminAuth.setCustomUserClaims(uid, { 
+    await adminAuth.setCustomUserClaims(uid, {
       orgId: orgId,
       role: "ADMIN"
     });
@@ -93,20 +95,20 @@ export const setupOrganization = onCall(async (request) => {
       createdAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return { 
-        status: "success", 
-        data: { orgId },
-        metadata: { timestamp: new Date().toISOString() }
+    return {
+      status: "success",
+      data: { orgId },
+      metadata: { timestamp: new Date().toISOString() }
     };
   } catch (error: any) {
     console.error("Error setting up organization:", error);
     return {
-        status: "error",
-        data: null,
-        metadata: {
-            timestamp: new Date().toISOString(),
-            errorMsg: error.message || "Internal server error"
-        }
+      status: "error",
+      data: null,
+      metadata: {
+        timestamp: new Date().toISOString(),
+        errorMsg: error.message || "Internal server error"
+      }
     };
   }
 });

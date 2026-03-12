@@ -4,12 +4,12 @@ import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBsoGZtYhWFtaY5X6whBxrh4y1WyqMXaio",
-  authDomain: "zenfinance-f8a21.firebaseapp.com",
-  projectId: "zenfinance-f8a21",
-  storageBucket: "zenfinance-f8a21.firebasestorage.app",
-  messagingSenderId: "775051813889",
-  appId: "1:775051813889:web:067cb5bad1c1e0508fcc00"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

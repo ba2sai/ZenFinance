@@ -6,6 +6,7 @@ import * as functions from "firebase-functions/v1";
 initializeApp();
 export { analyzeFinancialFlow, handleAdviceFeedback } from "./financialEngine.js";
 export { processUploadedFile } from "./ocrService.js";
+export { auditExpenses, auditIncomes, auditCategories, auditSavingGoals, auditRecurring } from "./auditTriggers.js";
 // Trigger: When a new user is created in Firebase Auth
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     const db = getFirestore();

@@ -16,6 +16,7 @@ import { PeaceView } from './components/PeaceView';
 import { Dashboard } from './components/Dashboard';
 import { ProfileView } from './components/ProfileView';
 import { ScenarioSimulator } from './components/ScenarioSimulator';
+import { Toaster } from './components/stitch/Toast';
 
 function App() {
   const auth = useAuthStore();
@@ -44,6 +45,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen font-sans selection:bg-indigo-500/30 text-slate-100">
+      <Toaster />
       <AnimatePresence>
         {/* Helper check to avoid type errors if showOnboarding undefined */}
         {(auth as any).showOnboarding && <OnboardingWizard />}
@@ -56,33 +58,33 @@ function App() {
 
       <main className="flex-1 p-4 md:p-8 ml-0 md:ml-20 lg:ml-64 transition-all duration-300 overflow-y-auto max-h-screen custom-scrollbar">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-           <div>
-             <h2 className="text-3xl font-black zen-gradient-text tracking-tight animate-in fade-in slide-in-from-left-4 duration-500">
-               {activeView === 'dashboard' && `Hola, ${auth.user.email?.split('@')[0] || 'Zen Master'} 👋`}
-               {activeView === 'incomes' && 'Mis Ingresos'}
-               {activeView === 'expenses' && 'Mis Gastos'}
-               {activeView === 'savings' && 'Metas de Ahorro'}
-               {activeView === 'subs' && 'Auditoría de Suscripciones'}
-               {activeView === 'peace' && 'Mi Paz Mental'}
-               {activeView === 'scenario' && 'Simulador de Escenarios'}
-               {activeView === 'profile' && 'Mi Perfil'}
-             </h2>
-             <p className="text-slate-400 font-medium mt-1">
-               {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-             </p>
-           </div>
-           
-           <div className="flex gap-3">
-             {(activeView === 'incomes' || activeView === 'expenses') && (
-               <button 
-                  onClick={() => setIsImportOpen(true)}
-                  className="px-5 py-2.5 bg-slate-800/50 backdrop-blur-md text-indigo-400 font-bold rounded-xl shadow-sm border border-white/10 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
-               >
-                  <Upload size={18} />
-                  <span>Importar CSV</span>
-               </button>
-             )}
-           </div>
+          <div>
+            <h2 className="text-3xl font-black zen-gradient-text tracking-tight animate-in fade-in slide-in-from-left-4 duration-500">
+              {activeView === 'dashboard' && `Hola, ${auth.user.email?.split('@')[0] || 'Zen Master'} 👋`}
+              {activeView === 'incomes' && 'Mis Ingresos'}
+              {activeView === 'expenses' && 'Mis Gastos'}
+              {activeView === 'savings' && 'Metas de Ahorro'}
+              {activeView === 'subs' && 'Auditoría de Suscripciones'}
+              {activeView === 'peace' && 'Mi Paz Mental'}
+              {activeView === 'scenario' && 'Simulador de Escenarios'}
+              {activeView === 'profile' && 'Mi Perfil'}
+            </h2>
+            <p className="text-slate-400 font-medium mt-1">
+              {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            {(activeView === 'incomes' || activeView === 'expenses') && (
+              <button
+                onClick={() => setIsImportOpen(true)}
+                className="px-5 py-2.5 bg-slate-800/50 backdrop-blur-md text-indigo-400 font-bold rounded-xl shadow-sm border border-white/10 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
+              >
+                <Upload size={18} />
+                <span>Importar CSV</span>
+              </button>
+            )}
+          </div>
         </header>
 
         <div className="max-w-7xl mx-auto pb-20">
